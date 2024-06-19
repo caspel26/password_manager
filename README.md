@@ -5,6 +5,10 @@ Python password manager which use rsa key to crypt password file.
 
 ### Setup your environment
 
+- Move to password_manager folder
+```bash
+cd password_manager
+```
 - Create a virtual environment
 ```bash
 python -m venv .venv
@@ -21,11 +25,7 @@ python -m venv .venv
 ```bash
 pip install -r requirements.txt
 ```
-- Enter src folder
-```bash
-cd src
-```
 - Run script with
 ```bash
-python main.py
+python src
 ```
