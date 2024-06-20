@@ -9,14 +9,15 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 KEY_DIR = Path("keys/")
 PASSWD_FILE = Path("passwd.txt")
 
 
 class File:
     def __init__(self) -> None:
-        self.keydir_path = KEY_DIR
-        self.passwd_path = PASSWD_FILE
+        self.keydir_path =  BASE_DIR / KEY_DIR
+        self.passwd_path = BASE_DIR / PASSWD_FILE
 
     @classmethod
     def check_filepath(cls, path: Path, file_name: str) -> Path:
@@ -30,14 +31,10 @@ class File:
                     return filepath
 
                 case "N":
-                    new_file = input(
-                        "Enter file name where to store password: ex. priv.key\n"
-                    )
+                    new_file = input("Enter file name:\n")
                     while new_file == file_name:
                         time.sleep(0.3)
-                        new_file = input(
-                            "Please enter a different file name where to store password: ex. priv.key\n"
-                        )
+                        new_file = input("Please enter a different file name:\n")
                     filepath = path / new_file
                     return filepath
 
