@@ -27,12 +27,7 @@ def store_password(pubkey: rsa.RSAPublicKey) -> None:
     service = input("Enter service name: ")
     username = input("Enter username: ")
     password = getpass("Enter password: ")
-    file_data = Key().encrypt_message(
-        service,
-        username,
-        password,
-        pubkey
-    )
+    file_data = Key().encrypt_message(service, username, password, pubkey)
     File().write_storefile(file_data)
     return file_data
 
@@ -45,16 +40,18 @@ def search_password(privkey: rsa.RSAPrivateKey) -> None:
     print("Searching...")
     time.sleep(0.5)
     for passwd in passwords:
-        if service != passwd['service']:
+        if service != passwd["service"]:
             continue
         else:
-            passwd_found = passwd['password']
-            username = passwd['username']
+            passwd_found = passwd["password"]
+            username = passwd["username"]
     if passwd_found is None:
         print("There is not a stored password for this service\nExit...")
         time.sleep(0.5)
         return None
-    print(f"Username and password for service {service} are:\nusername: {username}\npassword: {passwd_found}")
+    print(
+        f"Username and password for service {service} are:\nusername: {username}\npassword: {passwd_found}"
+    )
 
 
 def update_password(privkey: rsa.RSAPrivateKey, pubkey: rsa.RSAPublicKey) -> None:
@@ -65,7 +62,7 @@ def update_password(privkey: rsa.RSAPrivateKey, pubkey: rsa.RSAPublicKey) -> Non
     print("Searching...")
     time.sleep(0.5)
     for passwd in passwords:
-        if service != passwd['service']:
+        if service != passwd["service"]:
             continue
         else:
             service_index = passwords.index(passwd)
@@ -94,48 +91,56 @@ def list_passwords(privkey: rsa.RSAPrivateKey) -> None:
 
 
 def main():
-        try:
-            starter_choice = input("Do you already have a key to access? type y/n\n").upper()
-            match starter_choice:
-                case "N":
-                    key_gen()
-                case "Y":
-                    print("Going next...")
+    try:
+        starter_choice = input(
+            "Do you already have a key to access? type y/n\n"
+        ).upper()
+        match starter_choice:
+            case "N":
+                key_gen()
+            case "Y":
+                print("Going next...")
+            case _:
+                print("Invalid choice, exit...")
+                time.sleep(0.5)
+                exit()
+        time.sleep(0.3)
+        key_file = input("Enter key file name: ")
+        key_passwd = getpass("Enter key password: ")
+        pkey = Key().load_key(key_file, key_passwd)
+        pubkey = pkey.public_key()
+        time.sleep(0.3)
+        while True:
+            choice = input(
+                "What do you want do?\n1. Search a password.\n2. Store a password\n3. Change a password\n4. List all passwords\n5. Exit\n"
+            )
+            while not choice.isnumeric():
+                print("The input must be a number.")
+                choice = input(
+                    "What do you want do?\n1. Search a password.\n2. Store a password\n3. Change a password\n4. List all passwords\n5. Exit\n"
+                )
+            match int(choice):
+                case 1:
+                    search_password(pkey)
+                case 2:
+                    store_password(pubkey)
+                case 3:
+                    update_password(pkey, pubkey)
+                case 4:
+                    list_passwords(pkey)
+                case 5:
+                    print("Exit...")
+                    time.sleep(0.5)
+                    exit()
                 case _:
                     print("Invalid choice, exit...")
                     time.sleep(0.5)
                     exit()
-            time.sleep(0.3)
-            key_file = input("Enter key file name: ")
-            key_passwd = getpass("Enter key password: ")
-            pkey = Key().load_key(key_file, key_passwd)
-            pubkey = pkey.public_key()
-            time.sleep(0.3)
-            while True:
-                choice = int(input("What do you want do?\n1. Search a password.\n2. Store a password\n3. Change a password\n4. List all passwords\n5. Exit\n"))
-                match choice:
-                    case 1:
-                        search_password(pkey)
-                    case 2:
-                        store_password(pubkey)
-                    case 3:
-                        update_password(pkey, pubkey)
-                    case 4:
-                        list_passwords(pkey)
-                    case 5:
-                        print("Exit...")
-                        time.sleep(0.5)
-                        exit()
-                    case _:
-                        print("Invalid choice, exit...")
-                        time.sleep(0.5)
-                        exit()
-        except KeyboardInterrupt:
-            print("Exit...")
-            time.sleep(0.5)
-            exit()
-    
-            
+    except KeyboardInterrupt:
+        print("Exit...")
+        time.sleep(0.5)
+        exit()
+
 
 if __name__ == "__main__":
     main()
