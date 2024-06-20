@@ -42,9 +42,8 @@ def search_password(privkey: rsa.RSAPrivateKey) -> None:
     for passwd in passwords:
         if service != passwd["service"]:
             continue
-        else:
-            passwd_found = passwd["password"]
-            username = passwd["username"]
+        passwd_found = passwd["password"]
+        username = passwd["username"]
     if passwd_found is None:
         print("There is not a stored password for this service\nExit...")
         time.sleep(0.5)
