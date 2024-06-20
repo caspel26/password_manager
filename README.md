@@ -1,9 +1,9 @@
 # 🔒 Password Manager 🔒
 Python password manager which use rsa key to crypt password file.
 
-## How to run
+## 📝 How to run
 
-### Setup your environment
+### 🚀 Setup your environment
 
 - Move to password_manager folder
 ```bash
