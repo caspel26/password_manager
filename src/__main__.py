@@ -32,7 +32,7 @@ def store_password(pubkey: rsa.RSAPublicKey) -> None:
     return file_data
 
 
-def search_password(privkey: rsa.RSAPrivateKey) -> None:
+def search_password(privkey: rsa.RSAPrivateKey) -> tuple[int, dict[str, str]] | tuple[None, None]:
     data = File().read_storefile()
     passwords = Key().decrypt_message(data, privkey)
     service = input("Enter the service of the password that you would to find:\n")
@@ -44,37 +44,30 @@ def search_password(privkey: rsa.RSAPrivateKey) -> None:
             continue
         passwd_found = passwd["password"]
         username = passwd["username"]
+        index = passwords.index(passwd)
+        service_found = passwd
     if passwd_found is None:
         print("There is not a stored password for this service\nExit...")
         time.sleep(0.5)
-        return None
+        return None, None
     print(
         f"Username and password for service {service} are:\nusername: {username}\npassword: {passwd_found}"
     )
+    return index, service_found
 
 
 def update_password(privkey: rsa.RSAPrivateKey, pubkey: rsa.RSAPublicKey) -> None:
     data = File().read_storefile()
     passwords = Key().decrypt_message(data, privkey)
-    service = input("Enter the service of the password that you would to update:\n")
-    service_found = None
-    print("Searching...")
-    time.sleep(0.5)
-    for passwd in passwords:
-        if service != passwd["service"]:
-            continue
-        else:
-            service_index = passwords.index(passwd)
-            service_found = passwd
-    if service_found is None:
-        print("No service found.\nExit...")
-        time.sleep(0.5)
+    service_index, service = search_password(privkey)
+    if not service_index:
         return None
     new_username = input("Enter the new username: ")
     new_password = getpass("Enter the new password: ")
-    service_found["username"] = new_username
-    service_found["password"] = new_password
-    passwords[service_index] = service_found
+    service["username"] = new_username
+    service["password"] = new_password
+    passwords[service_index] = service
+    print(passwords)
     print("Updating...")
     time.sleep(0.5)
     print("Writing on file...")

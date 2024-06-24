@@ -99,28 +99,24 @@ class File:
     ) -> None:
         path = self.passwd_path
         path.unlink()
-        path.touch()
-        with path.open("a") as f:
-            for password in passwords:
-                payload = {
-                    "service": password["service"],
-                    "username": password["username"],
-                    "password": password["password"],
-                }
-                data = json.dumps(payload).encode()
-                encrypted_data = pubkey.encrypt(
-                    data,
-                    padding.OAEP(
-                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                        algorithm=hashes.SHA256(),
-                        label=None,
-                    ),
-                )
-                b64_encrypted_data = base64.b64encode(encrypted_data).decode()
-                if not self.file_lines_count():
-                    f.write(b64_encrypted_data)
-                else:
-                    f.write("\n" + b64_encrypted_data)
+        for password in passwords:
+            print(password)
+            payload = {
+                "service": password["service"],
+                "username": password["username"],
+                "password": password["password"],
+            }
+            data = json.dumps(payload).encode()
+            encrypted_data = pubkey.encrypt(
+                data,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None,
+                ),
+            )
+            b64_encrypted_data = base64.b64encode(encrypted_data).decode()
+            self.write_storefile(b64_encrypted_data)
 
 
 class Key:
