@@ -67,7 +67,6 @@ def update_password(privkey: rsa.RSAPrivateKey, pubkey: rsa.RSAPublicKey) -> Non
     service["username"] = new_username
     service["password"] = new_password
     passwords[service_index] = service
-    print(passwords)
     print("Updating...")
     time.sleep(0.5)
     print("Writing on file...")

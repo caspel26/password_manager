@@ -100,7 +100,6 @@ class File:
         path = self.passwd_path
         path.unlink()
         for password in passwords:
-            print(password)
             payload = {
                 "service": password["service"],
                 "username": password["username"],
