@@ -282,5 +282,6 @@ terraform.rc
 .venv/
 .vscode/
 *.env
-passwd.txt
+*.txt
+*.bak
 *.key
