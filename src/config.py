@@ -1,6 +1,6 @@
 from pathlib import Path
 
-VERSION = 'v0.1.0'
+VERSION = 'v1.0.0'
 
 DEFAULT_GUI_SIZES = [("primary", "800x600"), ("secondary", "600x400")]
 FILES_TYPE = [
