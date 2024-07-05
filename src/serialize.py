@@ -1,121 +1,176 @@
 import json
-import time
 import base64
-from pathlib import Path
-from typing import Literal
-from getpass import getpass
+
+from customtkinter import filedialog
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-KEY_DIR = Path("keys/")
-PASSWD_FILE = Path("passwd.txt")
+from . import Gui, TopLevelGui
+from .config import FILES_TYPE
 
 
 class File:
-    def __init__(self) -> None:
-        self.keydir_path =  BASE_DIR / KEY_DIR
-        self.passwd_path = BASE_DIR / PASSWD_FILE
+    @classmethod
+    def get_file_to_save(cls, gui: Gui | TopLevelGui) -> str:
+        file_p = filedialog.asksaveasfilename(
+            title="Save file", filetypes=FILES_TYPE, defaultextension=FILES_TYPE
+        )
+        if not file_p:
+            return gui.show_messages("Error", "Invalid file")
+        return file_p
 
     @classmethod
-    def check_filepath(cls, path: Path, file_name: str) -> Path:
-        filepath = path / file_name
-        if filepath.exists():
-            choice = input(
-                "File with this name already exist. Would you overwrite it? y/n\n"
-            ).upper()
-            match choice:
-                case "Y":
-                    return filepath
+    def get_file(cls, gui: Gui | TopLevelGui) -> str:
+        file_p = filedialog.askopenfilename(
+            title="Load file", filetypes=FILES_TYPE, defaultextension=FILES_TYPE
+        )
+        if not file_p:
+            return gui.show_messages("Error", "Invalid file")
+        return file_p
 
-                case "N":
-                    new_file = input("Enter file name:\n")
-                    while new_file == file_name:
-                        time.sleep(0.3)
-                        new_file = input("Please enter a different file name:\n")
-                    filepath = path / new_file
-                    return filepath
+    @classmethod
+    def load_passwords_file(cls, file_p: str, gui: Gui | TopLevelGui):
+        gui.values["passwds"] = file_p
+        gui.values["passwds_name"] = File.get_filename(file_p)
 
-                case _:
-                    print("Invalid choice, exit...")
-                    time.sleep(0.5)
-                    exit()
-        return filepath
+    @classmethod
+    def save_file(cls, data: bytes, gui: Gui | TopLevelGui) -> None:
+        file_p = cls.get_file_to_save(gui)
+        with open(file_p, "wb") as f:
+            f.write(data)
 
-    def save_keyfile(self, file: str, pkey_cnt: bytes) -> None:
-        path = self.keydir_path
-        path.mkdir(parents=True, exist_ok=True)
-        pkey_filepath = self.check_filepath(path, file)
-        with pkey_filepath.open("wb") as f:
-            f.write(pkey_cnt)
+    @classmethod
+    def get_filename(cls, file_p: str) -> str:
+        file_s = file_p.split("/")
+        name = file_s[len(file_s) - 1]
+        return name
 
-    def read_storefile(self) -> list[bytes]:
-        path = self.passwd_path
-        if not path.exists():
-            print("You have no stored passwords")
-            print("Exit..")
-            time.sleep(0.5)
-            exit()
-        with path.open("rb") as f:
-            data = f.readlines()
-        return data
+    @classmethod
+    def get_file_backup(cls, file_p: str) -> str:
+        file_name = cls.get_filename(file_p)
+        file_name_bak = f"{file_name}.bak"
+        path = file_p.split("/")
+        path.pop()
+        path.append(file_name_bak)
+        path_bak = "/".join(path)
+        return path_bak
 
-    def file_lines_count(self) -> int:
+    @classmethod
+    def read_storefile(cls, gui: Gui | TopLevelGui) -> bool:
+        file_p = gui.values.get("passwds")
+        if file_p is None:
+            gui.show_messages("Error", "No passwords loaded")
+            return False
+        with open(file_p, "rb") as f:
+            gui.values["passwds_data_enc"] = f.readlines()
+        return True
+
+    @classmethod
+    def file_lines_count(cls, path: str) -> int:
         count = 0
-        path = self.passwd_path
-        with path.open("rb") as f:
+        with open(path, "rb") as f:
             for _ in f.read():
                 count += 1
         return count
 
-    def write_storefile(self, data: str) -> None:
-        path = self.passwd_path
-        if not path.exists():
-            path.touch()
-        with path.open("a") as f:
-            if not self.file_lines_count():
+    @classmethod
+    def overwrite_storefile(
+        cls, path: str, data: list[str], gui: TopLevelGui, r_gui: Gui
+    ):
+        # BACKUP FILE
+        path_bak = cls.get_file_backup(path)
+        f = open(path, "r+")
+        file_data = f.read()
+        with open(path_bak, "w") as f_bak:
+            f_bak.write(file_data)
+
+        # DELETE OLD FILE CONTENT
+        f.read()
+        f.seek(0)
+        f.truncate()
+        f.close()
+
+        # OVERWRITE FILE
+        new_data = []
+        for d in data:
+            b64_data = Key.encrypt_message(payload=d, gui=gui, r_gui=r_gui)
+            new_data.append(b64_data)
+        for line in new_data:
+            with open(path, "a") as f:
+                if cls.file_lines_count(path) == 0:
+                    f.write(line)
+                else:
+                    f.write("\n" + line)
+
+    @classmethod
+    def write_storefile(
+        cls, gui: TopLevelGui, r_gui: Gui, payload: dict[str, str]
+    ) -> None:
+        data = Key.encrypt_message(payload=payload, gui=gui, r_gui=r_gui)
+        file_p = r_gui.values.get("passwds")
+        if data is None:
+            return gui.show_messages("Error", "No encrypted data stored")
+        if file_p is None:
+            file_p = cls.get_file_to_save(gui=gui)
+            File.load_passwords_file(file_p=file_p, gui=r_gui)
+
+        with open(file_p, "a") as f:
+            if cls.file_lines_count(path=file_p) == 0:
                 f.write(data)
             else:
                 f.write("\n" + data)
+        return gui.show_messages("Info", "Data saved")
 
-    def check_key_file(self, file: str) -> Path:
-        keypath = self.keydir_path / file
-        while not keypath.exists():
-            print("Key does not exist.")
-            choice = input("Would yout enter a different key? y/n\n").upper()
-            match choice:
-                case "Y":
-                    file = input("Enter key file name: ")
-                    keypath = self.keydir_path / file
-                case "N":
-                    print("Exit...")
-                    exit()
-        return keypath
-
-    def update_password_file(
-        self, passwords: list[dict[str, str]], pubkey: rsa.RSAPublicKey
-    ) -> None:
-        path = self.passwd_path
-        path.unlink()
-        for password in passwords:
-            payload = {
-                "service": password["service"],
-                "username": password["username"],
-                "password": password["password"],
-            }
-            data = json.dumps(payload).encode()
-            encrypted_data = pubkey.encrypt(
-                data,
-                padding.OAEP(
-                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                    algorithm=hashes.SHA256(),
-                    label=None,
-                ),
+    @classmethod
+    def search_password(cls, service: str, r_gui: Gui, gui: TopLevelGui) -> None:
+        passwords = r_gui.values.get("passwds_data_dec")
+        passwd_found = None
+        for passwd in passwords:
+            if service == passwd["service"]:
+                passwd_found = passwd
+                break
+        if passwd_found is None:
+            return gui.show_messages(
+                "Warning", "There is not a stored password for this service"
             )
-            b64_encrypted_data = base64.b64encode(encrypted_data).decode()
-            self.write_storefile(b64_encrypted_data)
+        gui.values["passwd_found"] = passwd_found
+        return gui.show_messages("Info", "Password found")
+
+    @classmethod
+    def update_password(
+        cls, r_gui: Gui, gui: TopLevelGui, main_gui: Gui, payload: dict[str, str]
+    ) -> None:
+        index = 0
+        old_passwd = main_gui.values.get("passwd_found")
+        file_p: str = r_gui.values.get("passwds")
+        passwords: list[dict] = r_gui.values.get("passwds_data_dec")
+        for passwd in passwords:
+            if old_passwd["service"] != passwd["service"]:
+                index += 1
+                continue
+            passwords[index] = payload
+        r_gui.values["passwds_data_dec"] = passwords
+        main_gui.values["passwd_found"] = payload
+        cls.overwrite_storefile(path=file_p, data=passwords, gui=gui, r_gui=r_gui)
+        gui.show_messages("Info", "Password successfuly updated")
+        return gui.close_window()
+
+    @classmethod
+    def delete_password(cls, r_gui: Gui, gui: TopLevelGui):
+        index = 0
+        passwd_to_del = gui.values["passwd_found"]
+        passwords: list[dict] = r_gui.values["passwds_data_dec"]
+        file_p: str = r_gui.values["passwds"]
+        for passwd in passwords:
+            if passwd_to_del != passwd:
+                index += 1
+                continue
+            passwords.pop(index)
+            r_gui.values["passwds_data_dec"] = passwords
+        cls.overwrite_storefile(path=file_p, data=passwords, gui=gui, r_gui=r_gui)
+        return gui.show_messages("Info", "Password successfuly deleted")
 
 
 class Key:
@@ -134,49 +189,41 @@ class Key:
 
     @classmethod
     def pkey_password_match(
-        cls, passwd: str, passwd_to_match: str
-    ) -> tuple[Literal[False], str] | tuple[str, None]:
-        MAX_COUNT = 3
-        retry_count = 0
-        while retry_count <= MAX_COUNT:
-            if passwd != passwd_to_match:
-                retry_count += 1
-                if retry_count == MAX_COUNT:
-                    return False, "Max try reached. Exit..."
-                print(
-                    f"Passwords don't match please try again.\nYou can try : {MAX_COUNT-retry_count} more times"
-                )
-                passwd = getpass("Enter password for your key: \n")
-                passwd_to_match = getpass("Enter it again to confirm: \n")
-            else:
-                break
-        return passwd, None
+        cls, passwd: str, passwd_match: str, gui: TopLevelGui
+    ) -> None:
+        if passwd != passwd_match:
+            return gui.show_messages("Error", "Password mismatch")
+        pkey = cls.generate_pkey(passwd)
+        File.save_file(pkey, gui)
+        gui.show_messages("Info", "Key created")
+        return gui.close_window()
 
     @classmethod
-    def load_key(cls, file: str, passwd: str) -> rsa.RSAPrivateKey:
-        filepath = File().check_key_file(file)
-        with filepath.open("rb") as keyfile:
+    def get_pkey(cls, file_p: str, passwd: str, r_gui: Gui, gui: TopLevelGui) -> None:
+        with open(file_p, "rb") as keyfile:
             try:
                 pkey = serialization.load_pem_private_key(
                     keyfile.read(), password=passwd.encode()
                 )
+                r_gui.values["pkey"] = pkey
+                r_gui.values["pubkey"] = pkey.public_key()
+                r_gui.values["pkey_name"] = File.get_filename(file_p)
             except ValueError as e:
-                print(e)
-                time.sleep(0.3)
-                print("Exit...")
-                time.sleep(0.5)
-                exit()
-        return pkey
+                return gui.show_messages("Error", e)
+        gui.show_messages("Info", "Key successfuly loaded")
+        return gui.close_window()
 
     @classmethod
     def encrypt_message(
-        cls, service: str, username: str, password: str, key: rsa.RSAPublicKey
-    ) -> str:
-        payload = {
-            "service": service,
-            "username": username,
-            "password": password,
-        }
+        cls,
+        payload: dict[str, str],
+        gui: TopLevelGui,
+        r_gui: Gui,
+    ) -> str | None:
+        key: rsa.RSAPublicKey = r_gui.values.get("pubkey")
+        if key is None:
+            gui.show_messages("Error", "No key loaded")
+            return gui.close_window()
         data = json.dumps(payload).encode()
         encrypted_data = key.encrypt(
             data,
@@ -186,17 +233,24 @@ class Key:
                 label=None,
             ),
         )
-        b64_encrypted_data = base64.b64encode(encrypted_data).decode()
-        return b64_encrypted_data
+        b64_enc_data = base64.b64encode(encrypted_data).decode()
+        return b64_enc_data
 
     @classmethod
-    def decrypt_message(
-        cls, encrypted_data: list[bytes], key: rsa.RSAPrivateKey
-    ) -> list[dict[str, str]]:
+    def decrypt_message(cls, gui: Gui | TopLevelGui) -> bool:
+        encrypted_data = gui.values.get("passwds_data_enc")
+        key: rsa.RSAPrivateKey = gui.values.get("pkey")
+        if encrypted_data is None:
+            gui.show_messages("Error", "No password data")
+            return False
+        if key is None:
+            gui.show_messages("Error", "No key loaded")
+            return False
+
         decrypted_data = []
         try:
             for data in encrypted_data:
-                data = key.decrypt(
+                d_data = key.decrypt(
                     base64.b64decode(data),
                     padding.OAEP(
                         mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -204,9 +258,9 @@ class Key:
                         label=None,
                     ),
                 )
-                decrypted_data.append(json.loads(data))
+                decrypted_data.append(json.loads(d_data))
         except ValueError as e:
-            print(e)
-            time.sleep(0.5)
-            exit()
-        return decrypted_data
+            gui.show_messages("Error", e)
+            return False
+        gui.values["passwds_data_dec"] = decrypted_data
+        return True

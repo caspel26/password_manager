@@ -33,7 +33,7 @@ pip install -r requirements.txt
 ### 🚀 Usage
 - Run script with
 ```bash
-python src
+python .
 ```
 
 ## 📌 Notes
