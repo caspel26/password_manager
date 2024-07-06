@@ -1,4 +1,4 @@
-# 🔒 Password Manager 🔒
+# 🔒 Password Manager
 Python password manager which use rsa key to crypt password file.
 
 ## 📝 Instructions
@@ -25,7 +25,7 @@ python -m venv .venv
 . .venv/Scripts/activate
 ```
 
-### 🔗 Install requirements
+### 📥 Install requirements
 ```bash
 pip install -r requirements.txt
 ```
