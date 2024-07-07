@@ -72,17 +72,23 @@ class Navbar:
             hover=False,
             cmd=self.display_passwd_frame,
         )
-
-    def move_navbar(self):
+    
+    def populate_navbar_buttons(self):
         if not self.navbar_frame.in_start_pos:
             self.home_btn.configure(text="")
             self.key_btn.configure(text="")
             self.passwd_btn.configure(text="")
-            return self.navbar_frame.move_backward()
+            return None
         self.home_btn.configure(text="Home", font=("Inter", 16))
         self.key_btn.configure(text="Keys Manager", font=("Inter", 16))
         self.passwd_btn.configure(text="Passwords Manager", font=("Inter", 16))
-        return self.navbar_frame.move_forward()
+
+    def move_navbar(self):
+        if self.navbar_frame.in_start_pos:
+            self.navbar_frame.move_forward()
+        else:
+            self.navbar_frame.move_backward()
+        return self.populate_navbar_buttons()
 
     def display_home_frame(self) -> None:
         self.navbar_frame.switch_indication(self.home_lbl)
