@@ -75,22 +75,13 @@ class Navbar:
 
     def move_navbar(self):
         if not self.navbar_frame.in_start_pos:
-            self.window.update_button_content(btn=self.home_btn, cnt={"text": ""})
-            self.window.update_button_content(btn=self.key_btn, cnt={"text": ""})
-            self.window.update_button_content(btn=self.passwd_btn, cnt={"text": ""})
+            self.home_btn.configure(text="")
+            self.key_btn.configure(text="")
+            self.passwd_btn.configure(text="")
             return self.navbar_frame.move_backward()
-
-        self.window.update_button_content(
-            btn=self.home_btn, cnt={"text": "Home", "font": ("Inter", 16)}
-        )
-
-        self.window.update_button_content(
-            btn=self.key_btn, cnt={"text": "Keys Manager", "font": ("Inter", 16)}
-        )
-        self.window.update_button_content(
-            btn=self.passwd_btn,
-            cnt={"text": "Passwords Manager", "font": ("Inter", 16)},
-        )
+        self.home_btn.configure(text="Home", font=("Inter", 16))
+        self.key_btn.configure(text="Keys Manager", font=("Inter", 16))
+        self.passwd_btn.configure(text="Passwords Manager", font=("Inter", 16))
         return self.navbar_frame.move_forward()
 
     def display_home_frame(self) -> None:
