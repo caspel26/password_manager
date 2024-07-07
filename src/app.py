@@ -4,9 +4,8 @@ from typing import Optional
 import customtkinter as ctk
 
 from . import config as cfg
-from .serialize import Key, File
-from components.gui import Gui, TopLevelGui
-from components.navbar import AnimatedNavbar
+from . import KeyManager, FileManager
+from components import Gui, TopLevelGui, AnimatedNavbar
 
 
 class App:
@@ -253,11 +252,13 @@ class PasswordsManagerFrame:
         )
 
     def load_passwords(self) -> None:
-        file_p = File.get_file(gui=self.window)
+        file_p = FileManager.get_file(gui=self.window)
         if not file_p:
             return None
-        File.load_passwords_file(file_p=file_p, gui=self.window)
-        lbl_cnt = {"text": f"Current Passwords:\n{self.window.values.get("passwds_name")}"}
+        FileManager.load_passwords_file(file_p=file_p, gui=self.window)
+        lbl_cnt = {
+            "text": f"Current Passwords:\n{self.window.values.get("passwds_name")}"
+        }
         self.window.update_label_content(lbl=self.lbl_passwd, cnt=lbl_cnt)
         if self.window.values.get("pkey"):
             self.window.update_button_content(
@@ -267,7 +268,9 @@ class PasswordsManagerFrame:
     def store_password(self) -> None:
         gui = StoreService(self.window, "Save Password")
         self.window.open_toplevel_window(gui.window)
-        lbl_cnt = {"text": f"Cuurent Passwords:\n{self.window.values.get("passwds_name")}"}
+        lbl_cnt = {
+            "text": f"Cuurent Passwords:\n{self.window.values.get("passwds_name")}"
+        }
         self.window.update_label_content(lbl=self.lbl_passwd, cnt=lbl_cnt)
         if self.window.values.get("pkey") and self.window.values.get("passwds"):
             self.window.update_button_content(
@@ -275,10 +278,10 @@ class PasswordsManagerFrame:
             )
 
     def search_password(self) -> None:
-        read_success = File.read_storefile(self.window)
+        read_success = FileManager.read_storefile(self.window)
         if not read_success:
             return None
-        dec_success = Key.decrypt_message(self.window)
+        dec_success = KeyManager.decrypt_message(self.window)
         if not dec_success:
             return None
         gui = SearchService(self.window)
@@ -307,7 +310,7 @@ class EnrollKey:
         self.window.create_button(
             txt="Confirm",
             pos_data={"relx": 0.5, "rely": 0.5, "anchor": "center"},
-            cmd=lambda: Key.pkey_password_match(
+            cmd=lambda: KeyManager.pkey_password_match(
                 passwd=passwd.get(), passwd_match=match.get(), gui=self.window
             ),
         )
@@ -333,7 +336,7 @@ class LoadKey:
         self.window.create_button(
             txt="Confirm",
             pos_data={"relx": 0.7, "rely": 0.3, "anchor": "center"},
-            cmd=lambda: Key.get_pkey(
+            cmd=lambda: KeyManager.get_pkey(
                 file_p=self.window.master.values.get("key_file"),
                 passwd=self.passwd.get(),
                 r_gui=self.window.master,
@@ -385,7 +388,7 @@ class StoreService(AddService):
         self.window.create_button(
             txt="Save & Encrypt",
             pos_data={"relx": 0.2, "rely": 0.7, "anchor": "center"},
-            cmd=lambda: File.write_storefile(
+            cmd=lambda: FileManager.write_storefile(
                 gui=self.window,
                 r_gui=self.window.master,
                 payload={
@@ -405,7 +408,7 @@ class UpdateService(AddService):
         self.window.create_button(
             txt="Update & Encrypt",
             pos_data={"relx": 0.2, "rely": 0.7, "anchor": "center"},
-            cmd=lambda: File.update_password(
+            cmd=lambda: FileManager.update_password(
                 r_gui=self.window.master.master,
                 gui=self.window,
                 main_gui=self.window.master,
@@ -456,7 +459,7 @@ class SearchService:
         self.window.lock_main_window()
 
     def search_password(self) -> None:
-        File.search_password(
+        FileManager.search_password(
             service=self.service.get(), r_gui=self.window.master, gui=self.window
         )
         passwd_found = self.window.values.get("passwd_found")
@@ -485,7 +488,7 @@ class SearchService:
         self.window.update_textbox_content(box=self.passwd_found_box, cnt=box_cnt)
 
     def delete_password(self) -> None:
-        File.delete_password(r_gui=self.window.master, gui=self.window)
+        FileManager.delete_password(r_gui=self.window.master, gui=self.window)
         box_cnt = {"index": "0.0", "text": ""}
         self.window.update_textbox_content(box=self.passwd_found_box, cnt=box_cnt)
         del self.window.values["passwd_found"]

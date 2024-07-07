@@ -11,7 +11,7 @@ from components.gui import Gui, TopLevelGui
 from .config import FILES_TYPE
 
 
-class File:
+class FileManager:
     @classmethod
     def get_file_to_save(cls, gui: Gui | TopLevelGui) -> str:
         file_p = filedialog.asksaveasfilename(
@@ -33,7 +33,7 @@ class File:
     @classmethod
     def load_passwords_file(cls, file_p: str, gui: Gui | TopLevelGui):
         gui.values["passwds"] = file_p
-        gui.values["passwds_name"] = File.get_filename(file_p)
+        gui.values["passwds_name"] = cls.get_filename(file_p)
 
     @classmethod
     def save_file(cls, data: bytes, gui: Gui | TopLevelGui) -> None:
@@ -95,7 +95,7 @@ class File:
         # OVERWRITE FILE
         new_data = []
         for d in data:
-            b64_data = Key.encrypt_message(payload=d, gui=gui, r_gui=r_gui)
+            b64_data = KeyManager.encrypt_message(payload=d, gui=gui, r_gui=r_gui)
             new_data.append(b64_data)
         for line in new_data:
             with open(path, "a") as f:
@@ -108,13 +108,13 @@ class File:
     def write_storefile(
         cls, gui: TopLevelGui, r_gui: Gui, payload: dict[str, str]
     ) -> None:
-        data = Key.encrypt_message(payload=payload, gui=gui, r_gui=r_gui)
+        data = KeyManager.encrypt_message(payload=payload, gui=gui, r_gui=r_gui)
         file_p = r_gui.values.get("passwds")
         if data is None:
             return gui.show_messages("Error", "No encrypted data stored")
         if file_p is None:
             file_p = cls.get_file_to_save(gui=gui)
-            File.load_passwords_file(file_p=file_p, gui=r_gui)
+            cls.load_passwords_file(file_p=file_p, gui=r_gui)
 
         with open(file_p, "a") as f:
             if cls.file_lines_count(path=file_p) == 0:
@@ -173,7 +173,7 @@ class File:
         return gui.show_messages("Info", "Password successfuly deleted")
 
 
-class Key:
+class KeyManager:
     @classmethod
     def generate_pkey(cls, passwd: str) -> bytes:
         pkey = rsa.generate_private_key(
@@ -194,7 +194,7 @@ class Key:
         if passwd != passwd_match:
             return gui.show_messages("Error", "Password mismatch")
         pkey = cls.generate_pkey(passwd)
-        File.save_file(pkey, gui)
+        FileManager.save_file(pkey, gui)
         gui.show_messages("Info", "Key created")
         return gui.close_window()
 
@@ -207,7 +207,7 @@ class Key:
                 )
                 r_gui.values["pkey"] = pkey
                 r_gui.values["pubkey"] = pkey.public_key()
-                r_gui.values["pkey_name"] = File.get_filename(file_p)
+                r_gui.values["pkey_name"] = FileManager.get_filename(file_p)
             except ValueError as e:
                 return gui.show_messages("Error", e)
         gui.show_messages("Info", "Key successfuly loaded")

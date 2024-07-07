@@ -175,7 +175,7 @@ class BaseGui:
         try:
             img = Image.open(icon)
         except FileNotFoundError as e:
-            print(f"IMAGE: {e}")
+            cls.show_messages("Error", f"IMAGE: {e}")
             exit(1)
         ctk_icon = ctk.CTkImage(dark_image=img, size=data[1])
         return ctk_icon
