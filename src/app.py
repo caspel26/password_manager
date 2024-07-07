@@ -28,11 +28,11 @@ class Navbar:
         # NAVBAR LABELS
         self.home_lbl = self.window.create_label(
             master=self.navbar_frame,
-            pos_data={"relx": -0.03, "rely": 0.2},
+            pos_data={"relx": 0, "rely": 0.2},
         )
         self.keys_lbl = self.window.create_label(
             master=self.navbar_frame,
-            pos_data={"relx": -0.03, "rely": 0.3},
+            pos_data={"relx": 0, "rely": 0.3},
         )
         self.passwds_lbl = self.window.create_label(
             master=self.navbar_frame,
@@ -67,7 +67,7 @@ class Navbar:
         self.passwd_btn = self.window.create_button(
             master=self.navbar_frame,
             img_data=("lock.png", (24, 24)),
-            pos_data={"relx": 0.05, "rely": 0.4},
+            pos_data={"relx": 0.07, "rely": 0.4},
             border_w=0,
             hover=False,
             cmd=self.display_passwd_frame,
