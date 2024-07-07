@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
-from .gui import Gui, TopLevelGui
+from components.gui import Gui, TopLevelGui
 from .config import FILES_TYPE
 
 

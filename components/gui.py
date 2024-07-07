@@ -1,10 +1,10 @@
 from tkinter import messagebox
 from typing import Callable, Any, Optional
 
-from PIL import ImageTk
+from PIL import ImageTk, Image
 import customtkinter as ctk
 
-from . import config as cfg
+from src import config as cfg
 
 
 class BaseGui:
@@ -12,18 +12,39 @@ class BaseGui:
         self.toplevel_window: Optional[TopLevelGui] = None
         super(BaseGui, self).__init__()
 
+    def create_frame(
+        self,
+        pos_data: dict[str, Any],
+        master: Any | None = None,
+        corner_r: int = 0,
+        border_w: int = 1,
+        fg_c: str = "transparent",
+    ) -> ctk.CTkFrame:
+        if master is None:
+            master = self
+        frame = ctk.CTkFrame(
+            master=master,
+            corner_radius=corner_r,
+            border_width=border_w,
+            fg_color=fg_c,
+        )
+        frame.place(**pos_data)
+        return frame
+
     def create_button(
         self,
-        txt: str,
         pos_data: dict[str, str | float],
         state: str = "normal",
+        txt: str | None = None,
         master: Any | None = None,
         txt_c: str | None = None,
         cmd: Callable | None = None,
         corner_r: int = 32,
         fg_color: str = "transparent",
         border_w: int = 2,
-        border_c: str = "#9A11A7",
+        border_c: str = "#bd6cff",
+        img_data: tuple[str, tuple[int, int]] | None = None,
+        hover: bool = True,
     ) -> ctk.CTkButton:
         if master is None:
             master = self
@@ -37,21 +58,34 @@ class BaseGui:
             border_color=border_c,
             border_width=border_w,
             state=state,
+            hover=hover,
         )
+        if img_data:
+            w, h = img_data[1]
+            btn.configure(image=self.get_icon(img_data), width=w, height=h)
         btn.place(**pos_data)
         return btn
 
     def create_label(
         self,
-        txt: str,
         pos_data: dict[str, str | float],
         master: Any | None = None,
+        txt: str | None = None,
         txt_c: str | None = None,
+        font: tuple[str, int] | None = None,
         corner_r: int = 2,
+        bg_color: str = "transparent",
     ) -> ctk.CTkLabel:
         if master is None:
             master = self
-        lbl = ctk.CTkLabel(master, corner_radius=corner_r, text=txt, text_color=txt_c)
+        lbl = ctk.CTkLabel(
+            master,
+            corner_radius=corner_r,
+            text=txt,
+            text_color=txt_c,
+            bg_color=bg_color,
+            font=font,
+        )
         lbl.place(**pos_data)
         return lbl
 
@@ -85,10 +119,13 @@ class BaseGui:
         master: Any | None = None,
         corner_r: int = 32,
         fg_color: str = "transparent",
+        font: tuple[str, int] | None = None,
     ) -> ctk.CTkTextbox:
         if master is None:
             master = self
-        box = ctk.CTkTextbox(master, corner_radius=corner_r, fg_color=fg_color)
+        box = ctk.CTkTextbox(
+            master, corner_radius=corner_r, fg_color=fg_color, font=font
+        )
         box.place(**pos_data)
         box.insert(**data)
         return box
@@ -132,6 +169,17 @@ class BaseGui:
             return s[1]
         return size
 
+    @classmethod
+    def get_icon(cls, data: tuple[str, tuple[int, int]]) -> ctk.CTkImage:
+        icon = cfg.IMG_DIR / data[0]
+        try:
+            img = Image.open(icon)
+        except FileNotFoundError as e:
+            print(f"IMAGE: {e}")
+            exit(1)
+        ctk_icon = ctk.CTkImage(dark_image=img, size=data[1])
+        return ctk_icon
+
 
 class Gui(ctk.CTk, BaseGui):
     def __init__(
@@ -139,7 +187,6 @@ class Gui(ctk.CTk, BaseGui):
         title: str,
         resizable: tuple[bool, bool],
         size: str = "primary",
-        app_mode: str = "system",
     ):
         super().__init__()
         BaseGui.__init__(self)
@@ -149,7 +196,7 @@ class Gui(ctk.CTk, BaseGui):
         self.geometry(self.get_size(size))
         self.title(title)
         self.resizable(w, h)
-        self._set_appearance_mode(app_mode)
+        self._set_appearance_mode("dark")
         self.icon = ImageTk.PhotoImage(file=cfg.ICON)
         self.wm_iconbitmap()
         self.iconphoto(False, self.icon)
@@ -162,7 +209,6 @@ class TopLevelGui(ctk.CTkToplevel, BaseGui):
         title: str,
         resizable: tuple[bool, bool],
         size: str = "secondary",
-        app_mode: str = "system",
     ):
         super().__init__()
         BaseGui.__init__(self)
@@ -173,7 +219,7 @@ class TopLevelGui(ctk.CTkToplevel, BaseGui):
         self.geometry(self.get_size(size))
         self.title(title)
         self.resizable(w, h)
-        self._set_appearance_mode(app_mode)
+        self._set_appearance_mode("dark")
         self.icon = ImageTk.PhotoImage(file=cfg.ICON)
         self.wm_iconbitmap()
         self.after(300, lambda: self.iconphoto(False, self.icon))
