@@ -91,14 +91,20 @@ class Navbar:
         return self.populate_navbar_buttons()
 
     def display_home_frame(self) -> None:
+        if not self.navbar_frame.in_start_pos:
+            self.move_navbar()
         self.navbar_frame.switch_indication(self.home_lbl)
         HomeFrame(self.window)
 
     def display_key_frame(self) -> None:
+        if not self.navbar_frame.in_start_pos:
+            self.move_navbar()
         self.navbar_frame.switch_indication(self.keys_lbl)
         KeysManagerFrame(self.window)
 
     def display_passwd_frame(self) -> None:
+        if not self.navbar_frame.in_start_pos:
+            self.move_navbar()
         self.navbar_frame.switch_indication(self.passwds_lbl)
         PasswordsManagerFrame(self.window)
 
