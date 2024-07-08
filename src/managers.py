@@ -210,7 +210,7 @@ class KeyManager:
                 r_gui.values["pkey_name"] = FileManager.get_filename(file_p)
             except ValueError as e:
                 return gui.show_messages("Error", e)
-        gui.show_messages("Info", "Key successfuly loaded")
+        r_gui.show_messages("Check", "Key successfuly loaded")
         return gui.close_window()
 
     @classmethod

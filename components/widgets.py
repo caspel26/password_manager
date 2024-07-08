@@ -2,7 +2,7 @@ from typing import Any
 
 import customtkinter as ctk
 
-from .gui import Gui, TopLevelGui
+from . import Gui, TopLevelGui
 
 
 class AnimatedFrame(ctk.CTkFrame):

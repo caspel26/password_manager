@@ -1,8 +1,8 @@
-from tkinter import messagebox
 from typing import Callable, Any, Optional
 
-from PIL import ImageTk, Image
 import customtkinter as ctk
+from PIL import ImageTk, Image
+from CTkMessagebox import CTkMessagebox
 
 from src import config as cfg
 
@@ -135,15 +135,22 @@ class BaseGui:
             # create window if its None or destroyed
             self.toplevel_window = window
 
-    @classmethod
-    def show_messages(cls, title: str, msg: str) -> None:
+    def show_messages(self, title: str, msg: str) -> None:
+        icon_name = None
         match title:
             case "Error":
-                messagebox.showerror(title, msg)
-            case "Info":
-                messagebox.showinfo(title, msg)
-            case "Warning":
-                messagebox.showwarning(title, msg)
+                icon_name = "cancel"
+            case "Success":
+                icon_name = "check"
+
+        return CTkMessagebox(
+            master=self,
+            title=title,
+            message=msg,
+            icon=title.lower() if not icon_name else icon_name,
+            fade_in_duration=1,
+            sound=True,
+        )
 
     @classmethod
     def update_label_content(cls, lbl: ctk.CTkLabel, cnt: dict) -> ctk.CTkLabel:
@@ -175,7 +182,13 @@ class BaseGui:
         try:
             img = Image.open(icon)
         except FileNotFoundError as e:
-            cls.show_messages("Error", f"IMAGE: {e}")
+            CTkMessagebox(
+                title="Error",
+                message=f"IMAGE: {e}",
+                icon="error",
+                fade_in_duration=0.2,
+                sound=True,
+            )
             exit(1)
         ctk_icon = ctk.CTkImage(dark_image=img, size=data[1])
         return ctk_icon

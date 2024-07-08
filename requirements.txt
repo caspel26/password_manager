@@ -3,3 +3,4 @@ cryptography==42.0.5
 pycparser==2.21
 customtkinter==5.2.2
 Pillow==10.3.0
+CTkMessagebox==2.7
