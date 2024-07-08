@@ -148,7 +148,6 @@ class BaseGui:
             title=title,
             message=msg,
             icon=title.lower() if not icon_name else icon_name,
-            fade_in_duration=1,
             sound=True,
         )
 

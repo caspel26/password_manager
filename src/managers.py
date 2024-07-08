@@ -121,7 +121,7 @@ class FileManager:
                 f.write(data)
             else:
                 f.write("\n" + data)
-        return gui.show_messages("Info", "Data saved")
+        return gui.show_messages("Success", "Data saved")
 
     @classmethod
     def search_password(cls, service: str, r_gui: Gui, gui: TopLevelGui) -> None:
@@ -136,7 +136,7 @@ class FileManager:
                 "Warning", "There is not a stored password for this service"
             )
         gui.values["passwd_found"] = passwd_found
-        return gui.show_messages("Info", "Password found")
+        return gui.show_messages("Success", "Password found")
 
     @classmethod
     def update_password(
@@ -154,7 +154,7 @@ class FileManager:
         r_gui.values["passwds_data_dec"] = passwords
         main_gui.values["passwd_found"] = payload
         cls.overwrite_storefile(path=file_p, data=passwords, gui=gui, r_gui=r_gui)
-        gui.show_messages("Info", "Password successfuly updated")
+        gui.show_messages("Success", "Password successfuly updated")
         return gui.close_window()
 
     @classmethod
@@ -170,7 +170,7 @@ class FileManager:
             passwords.pop(index)
             r_gui.values["passwds_data_dec"] = passwords
         cls.overwrite_storefile(path=file_p, data=passwords, gui=gui, r_gui=r_gui)
-        return gui.show_messages("Info", "Password successfuly deleted")
+        return gui.show_messages("Success", "Password successfuly deleted")
 
 
 class KeyManager:
@@ -195,7 +195,7 @@ class KeyManager:
             return gui.show_messages("Error", "Password mismatch")
         pkey = cls.generate_pkey(passwd)
         FileManager.save_file(pkey, gui)
-        gui.show_messages("Info", "Key created")
+        gui.show_messages("Success", "Key created")
         return gui.close_window()
 
     @classmethod
