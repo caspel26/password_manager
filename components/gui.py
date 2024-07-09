@@ -74,7 +74,7 @@ class BaseGui:
         txt_c: str | None = None,
         font: tuple[str, int] | None = None,
         corner_r: int = 2,
-        bg_color: str = "transparent",
+        img_data: tuple[str, tuple[int, int]] | None = None,
     ) -> ctk.CTkLabel:
         if master is None:
             master = self
@@ -83,9 +83,11 @@ class BaseGui:
             corner_radius=corner_r,
             text=txt,
             text_color=txt_c,
-            bg_color=bg_color,
             font=font,
         )
+        if img_data:
+            w, h = img_data[1]
+            lbl.configure(image=self.get_icon(img_data), width=w, height=h)
         lbl.place(**pos_data)
         return lbl
 

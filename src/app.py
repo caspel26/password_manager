@@ -23,20 +23,21 @@ class Navbar:
             pos_data={"relx": 0, "relheight": 1, "relwidth": 0.08},
             min_width=0.08,
             max_width=0.3,
+            fg_c="#818afb",
         )
 
         # NAVBAR LABELS
         self.home_lbl = self.window.create_label(
             master=self.navbar_frame,
-            pos_data={"relx": 0, "rely": 0.2},
+            pos_data={"relx": 0.01, "rely": 0.2},
         )
         self.keys_lbl = self.window.create_label(
             master=self.navbar_frame,
-            pos_data={"relx": 0, "rely": 0.3},
+            pos_data={"relx": 0.01, "rely": 0.3},
         )
         self.passwds_lbl = self.window.create_label(
             master=self.navbar_frame,
-            pos_data={"relx": 0, "rely": 0.4},
+            pos_data={"relx": 0.01, "rely": 0.4},
         )
 
         # NAVBAR BUTTONS
@@ -66,13 +67,13 @@ class Navbar:
         )
         self.passwd_btn = self.window.create_button(
             master=self.navbar_frame,
-            img_data=("lock.png", (24, 24)),
+            img_data=("lock.png", (23, 23)),
             pos_data={"relx": 0.07, "rely": 0.4},
             border_w=0,
             hover=False,
             cmd=self.display_passwd_frame,
         )
-    
+
     def populate_navbar_buttons(self):
         if not self.navbar_frame.in_start_pos:
             self.home_btn.configure(text="")
@@ -80,14 +81,26 @@ class Navbar:
             self.passwd_btn.configure(text="")
             return None
         self.home_btn.configure(text="Home", font=("Inter", 16))
-        self.key_btn.configure(text="Keys Manager", font=("Inter", 16))
-        self.passwd_btn.configure(text="Passwords Manager", font=("Inter", 16))
+        self.key_btn.configure(text="Key Manager", font=("Inter", 16))
+        self.passwd_btn.configure(text="Password Manager", font=("Inter", 16))
 
     def move_navbar(self):
+        btn_w = 25
+        btn_h = 25
         if self.navbar_frame.in_start_pos:
             self.navbar_frame.move_forward()
+            self.navbar_btn.configure(
+                image=self.window.get_icon(("close.png", (btn_w, btn_h))),
+                width=btn_w,
+                height=btn_h,
+            )
         else:
             self.navbar_frame.move_backward()
+            self.navbar_btn.configure(
+                image=self.window.get_icon(("navbar.png", (btn_w, btn_h))),
+                width=btn_w,
+                height=btn_h,
+            )
         return self.populate_navbar_buttons()
 
     def display_home_frame(self) -> None:
@@ -116,7 +129,6 @@ class HomeFrame:
             pos_data={"relx": 0.08, "relheight": 1, "relwidth": 0.92},
             border_w=0,
         )
-
         self.window.create_label(
             master=self.home_frame,
             pos_data={
