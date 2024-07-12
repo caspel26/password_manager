@@ -46,7 +46,7 @@ class Navbar:
             img_data=("navbar.png", (25, 25)),
             pos_data={"relx": 0.07, "rely": 0.01},
             border_w=0,
-            hover=False,
+            fg_color="transparent",
             cmd=self.move_navbar,
         )
         self.home_btn = self.window.create_button(
@@ -54,24 +54,24 @@ class Navbar:
             img_data=("home.png", (23, 23)),
             pos_data={"relx": 0.07, "rely": 0.2},
             border_w=0,
-            hover=False,
             cmd=self.display_home_frame,
+            fg_color="transparent",
         )
         self.key_btn = self.window.create_button(
             master=self.navbar_frame,
-            img_data=("key.png", (23, 23)),
+            img_data=("key.png", (25, 25)),
             pos_data={"relx": 0.07, "rely": 0.3},
             border_w=0,
-            hover=False,
             cmd=self.display_key_frame,
+            fg_color="transparent",
         )
         self.passwd_btn = self.window.create_button(
             master=self.navbar_frame,
-            img_data=("lock.png", (23, 23)),
+            img_data=("lock.png", (25, 25)),
             pos_data={"relx": 0.07, "rely": 0.4},
             border_w=0,
-            hover=False,
             cmd=self.display_passwd_frame,
+            fg_color="transparent",
         )
 
     def populate_navbar_buttons(self):
@@ -151,11 +151,18 @@ class HomeFrame:
         )
         self.window.create_button(
             master=self.home_frame,
-            pos_data={"relx": 0.5, "rely": 0.6, "anchor": "center"},
-            img_data=("github.png", (64, 64)),
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.6,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
+            img_data=("github.png", (25, 25)),
             border_w=0,
-            hover=False,
+            txt="GitHub",
             cmd=lambda: webbrowser.open(cfg.PROJECT_URL),
+            font=("Inter", 20)
         )
         self.window.create_label(
             txt=f"Version: {cfg.VERSION}",
@@ -186,14 +193,34 @@ class KeysManagerFrame:
         self.window.create_button(
             master=self.key_frame,
             txt="Generate Key",
-            pos_data={"relx": 0.5, "rely": 0.3, "anchor": "center"},
+            pos_data={
+                "relx": 0.3,
+                "rely": 0.3,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=lambda: self.window.open_toplevel_window(EnrollKey(self.window).window),
+            img_data=("key.png", (30, 30)),
+            font=("Inter", 14),
         )
         self.window.create_button(
             master=self.key_frame,
             txt="Load Key",
-            pos_data={"relx": 0.5, "rely": 0.5, "anchor": "center"},
+            pos_data={
+                "relx": 0.7,
+                "rely": 0.3,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.load_key,
+            img_data=("load.png", (30, 30)),
+            border_w=0,
+            border_c=None,
+            corner_r=10,
+            font=("Inter", 14),
+            fg_color="#4434bc",
         )
         self.lbl_pkey = self.window.create_label(
             master=self.key_frame,
@@ -243,21 +270,45 @@ class PasswordsManagerFrame:
         self.window.create_button(
             master=self.passwd_frame,
             txt="Load Passwords",
-            pos_data={"relx": 0.5, "rely": 0.3, "anchor": "center"},
+            pos_data={
+                "relx": 0.2,
+                "rely": 0.3,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.load_passwords,
+            img_data=("load.png", (30, 30)),
+            font=("Inter", 14)
         )
         self.window.create_button(
             master=self.passwd_frame,
             txt="Save Password",
-            pos_data={"relx": 0.5, "rely": 0.5, "anchor": "center"},
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.3,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.store_password,
+            img_data=("save.png", (25, 25)),
+            font=("Inter", 14)
         )
         self.search_btn = self.window.create_button(
             master=self.passwd_frame,
             txt="Search Password",
-            pos_data={"relx": 0.5, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.8,
+                "rely": 0.3,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.search_password,
             state="disabled",
+            img_data=("search.png", (25, 25)),
+            font=("Inter", 14)
         )
         self.lbl_passwd = self.window.create_label(
             master=self.passwd_frame,

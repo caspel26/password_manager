@@ -39,12 +39,13 @@ class BaseGui:
         master: Any | None = None,
         txt_c: str | None = None,
         cmd: Callable | None = None,
-        corner_r: int = 32,
-        fg_color: str = "transparent",
-        border_w: int = 2,
-        border_c: str = "#bd6cff",
+        corner_r: int = 10,
+        fg_color: str = "#4434bc",
+        border_w: int = 0,
+        border_c: str | None = None,
         img_data: tuple[str, tuple[int, int]] | None = None,
-        hover: bool = True,
+        hover: tuple[bool, str | None] = (False, None),
+        font: tuple[str, int] | None = None,
     ) -> ctk.CTkButton:
         if master is None:
             master = self
@@ -58,7 +59,9 @@ class BaseGui:
             border_color=border_c,
             border_width=border_w,
             state=state,
-            hover=hover,
+            hover=hover[0],
+            hover_color=hover[1],
+            font=font,
         )
         if img_data:
             w, h = img_data[1]
