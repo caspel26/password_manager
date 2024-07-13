@@ -4,7 +4,7 @@ from typing import Optional
 import customtkinter as ctk
 
 from . import config as cfg
-from . import KeyManager, FileManager
+from . import KeyManager, FileManager, PasswordManager
 from components import Gui, TopLevelGui, AnimatedNavbar
 
 
@@ -195,7 +195,7 @@ class KeysManagerFrame:
             txt="Generate Key",
             pos_data={
                 "relx": 0.3,
-                "rely": 0.3,
+                "rely": 0.25,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
@@ -209,7 +209,7 @@ class KeysManagerFrame:
             txt="Load Key",
             pos_data={
                 "relx": 0.7,
-                "rely": 0.3,
+                "rely": 0.25,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
@@ -272,7 +272,7 @@ class PasswordsManagerFrame:
             txt="Load Passwords",
             pos_data={
                 "relx": 0.2,
-                "rely": 0.3,
+                "rely": 0.25,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
@@ -286,7 +286,7 @@ class PasswordsManagerFrame:
             txt="Save Password",
             pos_data={
                 "relx": 0.5,
-                "rely": 0.3,
+                "rely": 0.25,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
@@ -300,7 +300,7 @@ class PasswordsManagerFrame:
             txt="Search Password",
             pos_data={
                 "relx": 0.8,
-                "rely": 0.3,
+                "rely": 0.25,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
@@ -310,17 +310,36 @@ class PasswordsManagerFrame:
             img_data=("search.png", (25, 25)),
             font=("Inter", 14)
         )
+        self.generate_passwd_btn = self.window.create_button(
+            master=self.passwd_frame,
+            txt="Generate Password",
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.4,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
+            cmd=self.generate_password,
+            img_data=("lock.png", (25, 25)),
+            font=("Inter", 14)
+        )
         self.lbl_passwd = self.window.create_label(
             master=self.passwd_frame,
             txt=f"Current Passwords:\n{self.window.values.get("passwds_name")}",
             font=("Inter", 13),
             pos_data={"relx": 0.9, "rely": 0.95, "anchor": "center"},
         )
+        self.gen_passwd_box = self.window.create_textbox(
+            master=self.passwd_frame,
+            data={"index": "0.0", "text": f"Passwords Generated:\n{None}"},
+            pos_data={"relx": 0.15, "rely": 1.027, "anchor": "center", "relwidth": 0.35},
+        )
 
     def load_passwords(self) -> None:
-        file_p = FileManager.get_file(gui=self.window)
+        file_p = FileManager.get_file(self.window)
         if not file_p:
-            return None
+            return None 
         FileManager.load_passwords_file(file_p=file_p, gui=self.window)
         lbl_cnt = {
             "text": f"Current Passwords:\n{self.window.values.get("passwds_name")}"
@@ -352,6 +371,14 @@ class PasswordsManagerFrame:
             return None
         gui = SearchService(self.window)
         self.window.open_toplevel_window(gui.window)
+    
+    def generate_password(self) -> None:
+        passwd = PasswordManager.gen_password(self.window)
+        box_cnt = {
+            "index": "0.0",
+            "text": f"Passwords Generated:\n{passwd}",
+        }
+        self.window.update_textbox_content(self.gen_passwd_box, box_cnt)
 
 
 class EnrollKey:

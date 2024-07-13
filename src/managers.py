@@ -1,4 +1,6 @@
 import json
+import random
+import string
 import base64
 
 from customtkinter import filedialog
@@ -26,7 +28,7 @@ class FileManager:
         file_p = filedialog.askopenfilename(
             title="Load file", filetypes=FILES_TYPE, defaultextension=FILES_TYPE
         )
-        if not file_p:
+        if file_p is None:
             return gui.show_messages("Error", "Invalid file")
         return file_p
 
@@ -264,3 +266,55 @@ class KeyManager:
             return False
         gui.values["passwds_data_dec"] = decrypted_data
         return True
+
+
+class PasswordManager:
+    @classmethod
+    def gen_lowercase(cls, length: int):
+        return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+
+    @classmethod
+    def gen_uppercase(cls, length: int):
+        return "".join(random.choice(string.ascii_uppercase) for _ in range(length))
+
+    @classmethod
+    def gen_digits(cls, length: int):
+        return "".join(random.choice(string.digits) for _ in range(length))
+
+    @classmethod
+    def gen_special_chars(cls, length: int):
+        return "".join(random.choice(string.punctuation) for _ in range(length))
+
+    @classmethod
+    def validate_password(cls, password: str):
+        for i in range(len(password) - 1):
+            if password[i] == password[i + 1]:
+                return False
+        return True
+
+    @classmethod
+    def gen_password(cls, gui: Gui | TopLevelGui, length: int = 24):
+        divider = 3
+
+        precise_divider = False
+        if length % divider == 0:
+            precise_divider = True
+
+        common = length // divider
+        special = length - (common * 3)
+
+        if precise_divider:
+            common -= 1
+            special += divider
+
+        while True:
+            chars = (
+                cls.gen_lowercase(common)
+                + cls.gen_uppercase(common)
+                + cls.gen_digits(common)
+                + cls.gen_special_chars(special)
+            )
+            generated_password = "".join(random.sample(chars, length))
+            if cls.validate_password(generated_password):
+                gui.show_messages("Success", "Password successfully generated")
+                return generated_password
