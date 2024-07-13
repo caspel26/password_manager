@@ -162,7 +162,7 @@ class HomeFrame:
             border_w=0,
             txt="GitHub",
             cmd=lambda: webbrowser.open(cfg.PROJECT_URL),
-            font=("Inter", 20)
+            font=("Inter", 20),
         )
         self.window.create_label(
             txt=f"Version: {cfg.VERSION}",
@@ -241,10 +241,6 @@ class KeysManagerFrame:
         self.window.open_toplevel_window(gui.window)
         lbl_cnt = {"text": f"Current Key:\n{self.window.values.get("pkey_name")}"}
         self.window.update_label_content(lbl=self.lbl_pkey, cnt=lbl_cnt)
-        if self.window.values.get("passwds"):
-            self.window.update_button_content(
-                btn=self.search_btn, cnt={"state": "normal"}
-            )
 
 
 class PasswordsManagerFrame:
@@ -279,7 +275,7 @@ class PasswordsManagerFrame:
             },
             cmd=self.load_passwords,
             img_data=("load.png", (30, 30)),
-            font=("Inter", 14)
+            font=("Inter", 14),
         )
         self.window.create_button(
             master=self.passwd_frame,
@@ -293,7 +289,7 @@ class PasswordsManagerFrame:
             },
             cmd=self.store_password,
             img_data=("save.png", (25, 25)),
-            font=("Inter", 14)
+            font=("Inter", 14),
         )
         self.search_btn = self.window.create_button(
             master=self.passwd_frame,
@@ -308,7 +304,7 @@ class PasswordsManagerFrame:
             cmd=self.search_password,
             state="disabled",
             img_data=("search.png", (25, 25)),
-            font=("Inter", 14)
+            font=("Inter", 14),
         )
         self.generate_passwd_btn = self.window.create_button(
             master=self.passwd_frame,
@@ -322,7 +318,7 @@ class PasswordsManagerFrame:
             },
             cmd=self.generate_password,
             img_data=("lock.png", (25, 25)),
-            font=("Inter", 14)
+            font=("Inter", 14),
         )
         self.lbl_passwd = self.window.create_label(
             master=self.passwd_frame,
@@ -333,22 +329,30 @@ class PasswordsManagerFrame:
         self.gen_passwd_box = self.window.create_textbox(
             master=self.passwd_frame,
             data={"index": "0.0", "text": f"Passwords Generated:\n{None}"},
-            pos_data={"relx": 0.15, "rely": 1.027, "anchor": "center", "relwidth": 0.35},
+            pos_data={
+                "relx": 0.15,
+                "rely": 1.027,
+                "anchor": "center",
+                "relwidth": 0.35,
+            },
         )
+        self.activate_button()
+
+
+    def activate_button(self):
+        if self.window.values.get("pkey") and self.window.values.get("passwds"):
+            self.search_btn.configure(state="normal")
+        self.window.after(1000, self.activate_button)
 
     def load_passwords(self) -> None:
         file_p = FileManager.get_file(self.window)
         if not file_p:
-            return None 
+            return None
         FileManager.load_passwords_file(file_p=file_p, gui=self.window)
         lbl_cnt = {
             "text": f"Current Passwords:\n{self.window.values.get("passwds_name")}"
         }
         self.window.update_label_content(lbl=self.lbl_passwd, cnt=lbl_cnt)
-        if self.window.values.get("pkey"):
-            self.window.update_button_content(
-                btn=self.search_btn, cnt={"state": "normal"}
-            )
 
     def store_password(self) -> None:
         gui = StoreService(self.window, "Save Password")
@@ -357,10 +361,6 @@ class PasswordsManagerFrame:
             "text": f"Cuurent Passwords:\n{self.window.values.get("passwds_name")}"
         }
         self.window.update_label_content(lbl=self.lbl_passwd, cnt=lbl_cnt)
-        if self.window.values.get("pkey") and self.window.values.get("passwds"):
-            self.window.update_button_content(
-                btn=self.search_btn, cnt={"state": "normal"}
-            )
 
     def search_password(self) -> None:
         read_success = FileManager.read_storefile(self.window)
@@ -371,7 +371,7 @@ class PasswordsManagerFrame:
             return None
         gui = SearchService(self.window)
         self.window.open_toplevel_window(gui.window)
-    
+
     def generate_password(self) -> None:
         passwd = PasswordManager.gen_password(self.window)
         box_cnt = {
@@ -402,15 +402,29 @@ class EnrollKey:
         )
         self.window.create_button(
             txt="Confirm",
-            pos_data={"relx": 0.5, "rely": 0.5, "anchor": "center"},
             cmd=lambda: KeyManager.pkey_password_match(
                 passwd=passwd.get(), passwd_match=match.get(), gui=self.window
             ),
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.5,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
+            font=("Inter", 14),
         )
         self.window.create_button(
             txt="Exit",
-            pos_data={"relx": 0.5, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.window.close_window,
+            font=("Inter", 14),
         )
 
 
@@ -428,7 +442,13 @@ class LoadKey:
         )
         self.window.create_button(
             txt="Confirm",
-            pos_data={"relx": 0.7, "rely": 0.3, "anchor": "center"},
+            pos_data={
+                "relx": 0.7,
+                "rely": 0.3,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=lambda: KeyManager.get_pkey(
                 file_p=self.window.master.values.get("key_file"),
                 passwd=self.passwd.get(),
@@ -438,7 +458,13 @@ class LoadKey:
         )
         self.window.create_button(
             txt="Exit",
-            pos_data={"relx": 0.5, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.window.close_window,
         )
         self.window.lock_main_window()
@@ -469,7 +495,13 @@ class AddService:
         )
         self.window.create_button(
             txt="Exit",
-            pos_data={"relx": 0.8, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.8,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.window.close_window,
         )
 
@@ -480,7 +512,13 @@ class StoreService(AddService):
 
         self.window.create_button(
             txt="Save & Encrypt",
-            pos_data={"relx": 0.2, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.2,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=lambda: FileManager.write_storefile(
                 gui=self.window,
                 r_gui=self.window.master,
@@ -500,7 +538,13 @@ class UpdateService(AddService):
 
         self.window.create_button(
             txt="Update & Encrypt",
-            pos_data={"relx": 0.2, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.2,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=lambda: FileManager.update_password(
                 r_gui=self.window.master.master,
                 gui=self.window,
@@ -528,24 +572,48 @@ class SearchService:
         )
         self.window.create_button(
             txt="Search",
-            pos_data={"relx": 0.2, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.2,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.search_password,
         )
         self.updated_passwd_btn = self.window.create_button(
             txt="Update Password",
-            pos_data={"relx": 0.5, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.update_password,
             state="disabled",
         )
         self.delete_passwd_btn = self.window.create_button(
             txt="Delete Password",
-            pos_data={"relx": 0.8, "rely": 0.7, "anchor": "center"},
+            pos_data={
+                "relx": 0.8,
+                "rely": 0.7,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.delete_password,
             state="disabled",
         )
         self.window.create_button(
             txt="Exit",
-            pos_data={"relx": 0.5, "rely": 0.9, "anchor": "center"},
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.9,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
             cmd=self.window.destroy,
         )
         self.passwd_found_box: Optional[ctk.CTkTextbox] = None
