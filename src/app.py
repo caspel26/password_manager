@@ -1,11 +1,11 @@
 import webbrowser
-from typing import Optional
+from typing import Any
 
 import customtkinter as ctk
 
 from . import config as cfg
 from . import KeyManager, FileManager, PasswordManager
-from components import Gui, TopLevelGui, AnimatedNavbar
+from components import Gui, AnimatedNavbar, AnimatedFrame
 
 
 class App:
@@ -14,9 +14,29 @@ class App:
         self.navbar = Navbar(self.window)
 
 
+class MainLabel(ctk.CTkLabel):
+    def __init__(self, master: Any):
+        super().__init__(master)
+        self.master = master
+        self.place(relx=0.08, rely=0)
+        self.configure(
+            image=Gui.get_icon(("bg.jpg", (800, 600))), width=800, height=600
+        )
+
+
+class MainFrame(AnimatedFrame):
+    def __init__(self, master: Any):
+        super().__init__(
+            master=master,
+            pos_data={"relx": 1, "rely": 0.2, "relheight": 0.7, "relwidth": 0.92},
+            max_x=0,
+        )
+
+
 class Navbar:
     def __init__(self, master: Gui) -> None:
         self.window = master
+        self.main_label = MainLabel(self.window)
 
         self.navbar_frame = AnimatedNavbar(
             master=self.window,
@@ -88,14 +108,14 @@ class Navbar:
         btn_w = 25
         btn_h = 25
         if self.navbar_frame.in_start_pos:
-            self.navbar_frame.move_forward()
+            self.navbar_frame.open()
             self.navbar_btn.configure(
                 image=self.window.get_icon(("close.png", (btn_w, btn_h))),
                 width=btn_w,
                 height=btn_h,
             )
         else:
-            self.navbar_frame.move_backward()
+            self.navbar_frame.close()
             self.navbar_btn.configure(
                 image=self.window.get_icon(("navbar.png", (btn_w, btn_h))),
                 width=btn_w,
@@ -107,26 +127,28 @@ class Navbar:
         if not self.navbar_frame.in_start_pos:
             self.move_navbar()
         self.navbar_frame.switch_indication(self.home_lbl)
-        HomeFrame(self.window)
+        HomeFrame(self.window, self.main_label)
 
     def display_key_frame(self) -> None:
         if not self.navbar_frame.in_start_pos:
             self.move_navbar()
         self.navbar_frame.switch_indication(self.keys_lbl)
-        KeysManagerFrame(self.window)
+        KeysManagerFrame(self.window, self.main_label)
 
     def display_passwd_frame(self) -> None:
         if not self.navbar_frame.in_start_pos:
             self.move_navbar()
         self.navbar_frame.switch_indication(self.passwds_lbl)
-        PasswordsManagerFrame(self.window)
+        PasswordsManagerFrame(self.window, self.main_label)
 
 
 class HomeFrame:
-    def __init__(self, master: Gui):
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel):
         self.window = master
+        self.main_label = main_label
         self.home_frame = self.window.create_frame(
-            pos_data={"relx": 0.08, "relheight": 1, "relwidth": 0.92},
+            master=self.main_label,
+            pos_data={"relx": 0, "rely": 0.2, "relheight": 0.7, "relwidth": 0.92},
             border_w=0,
         )
         self.window.create_label(
@@ -165,30 +187,23 @@ class HomeFrame:
             font=("Inter", 20),
         )
         self.window.create_label(
+            master=self.home_frame,
             txt=f"Version: {cfg.VERSION}",
-            font=("Inter", 13),
+            font=("Inter", 14),
             pos_data={"relx": 0.9, "rely": 0.95, "anchor": "center"},
         )
 
 
 class KeysManagerFrame:
-    def __init__(self, master: Gui):
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel):
         self.window = master
+        self.main_label = main_label
         self.key_frame = self.window.create_frame(
-            pos_data={"relx": 0.08, "relheight": 1, "relwidth": 0.92},
+            master=self.main_label,
+            pos_data={"relx": 0, "rely": 0.2, "relheight": 0.7, "relwidth": 0.92},
             border_w=0,
         )
 
-        self.window.create_label(
-            master=self.key_frame,
-            pos_data={
-                "relx": 0.5,
-                "rely": 0.1,
-                "anchor": "center",
-            },
-            txt="Key Manager",
-            font=("Inter", 28),
-        )
         # KEYS MANAGER BUTTONS
         self.window.create_button(
             master=self.key_frame,
@@ -200,7 +215,9 @@ class KeysManagerFrame:
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=lambda: self.window.open_toplevel_window(EnrollKey(self.window).window),
+            cmd=EnrollKey(
+                master=self.window, main_label=self.main_label
+            ).main_frame.move_backward,
             img_data=("key.png", (30, 30)),
             font=("Inter", 14),
         )
@@ -216,18 +233,21 @@ class KeysManagerFrame:
             },
             cmd=self.load_key,
             img_data=("load.png", (30, 30)),
-            border_w=0,
-            border_c=None,
-            corner_r=10,
             font=("Inter", 14),
-            fg_color="#4434bc",
         )
-        self.lbl_pkey = self.window.create_label(
-            master=self.key_frame,
-            txt=f"Current Key:\n{self.window.values.get("pkey_name")}",
-            font=("Inter", 13),
-            pos_data={"relx": 0.9, "rely": 0.95, "anchor": "center"},
-        )
+        self.window.values |= {
+            "pkey_lbl": self.window.create_label(
+                master=self.key_frame,
+                txt=f"Current Key:\n{self.window.values.get("pkey_name")}",
+                font=("Inter", 13),
+                pos_data={
+                    "relx": 0.08,
+                    "rely": 0.95,
+                    "anchor": "center",
+                    "relwidth": 0.35,
+                },
+            )
+        }
 
     def load_key(self) -> None:
         self.window.values["key_file"] = ctk.filedialog.askopenfilename(
@@ -237,17 +257,16 @@ class KeysManagerFrame:
         )
         if not self.window.values.get("key_file"):
             return self.window.show_messages("Error", "Invalid file")
-        gui = LoadKey(self.window)
-        self.window.open_toplevel_window(gui.window)
-        lbl_cnt = {"text": f"Current Key:\n{self.window.values.get("pkey_name")}"}
-        self.window.update_label_content(lbl=self.lbl_pkey, cnt=lbl_cnt)
+        LoadKey(self.window, self.main_label).main_frame.move_backward()
 
 
 class PasswordsManagerFrame:
-    def __init__(self, master: Gui):
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel):
         self.window = master
+        self.main_label = main_label
         self.passwd_frame = self.window.create_frame(
-            pos_data={"relx": 0.08, "relheight": 1, "relwidth": 0.92},
+            master=self.main_label,
+            pos_data={"relx": 0, "rely": 0.2, "relheight": 0.7, "relwidth": 0.92},
             border_w=0,
         )
 
@@ -328,21 +347,21 @@ class PasswordsManagerFrame:
         )
         self.gen_passwd_box = self.window.create_textbox(
             master=self.passwd_frame,
-            data={"index": "0.0", "text": f"Passwords Generated:\n{None}"},
+            data={"index": "0.0", "text": f"Password Generated:\n{None}"},
             pos_data={
                 "relx": 0.15,
-                "rely": 1.027,
+                "rely": 1.07,
                 "anchor": "center",
                 "relwidth": 0.35,
             },
+            font=("Inter", 13),
         )
         self.activate_button()
-
 
     def activate_button(self):
         if self.window.values.get("pkey") and self.window.values.get("passwds"):
             self.search_btn.configure(state="normal")
-        self.window.after(1000, self.activate_button)
+        self.window.after(100, self.activate_button)
 
     def load_passwords(self) -> None:
         file_p = FileManager.get_file(self.window)
@@ -355,8 +374,7 @@ class PasswordsManagerFrame:
         self.window.update_label_content(lbl=self.lbl_passwd, cnt=lbl_cnt)
 
     def store_password(self) -> None:
-        gui = StoreService(self.window, "Save Password")
-        self.window.open_toplevel_window(gui.window)
+        StoreService(self.window, self.main_label).main_frame.move_backward()
         lbl_cnt = {
             "text": f"Cuurent Passwords:\n{self.window.values.get("passwds_name")}"
         }
@@ -369,8 +387,7 @@ class PasswordsManagerFrame:
         dec_success = KeyManager.decrypt_message(self.window)
         if not dec_success:
             return None
-        gui = SearchService(self.window)
-        self.window.open_toplevel_window(gui.window)
+        SearchService(self.window, self.main_label).main_frame.move_backward()
 
     def generate_password(self) -> None:
         passwd = PasswordManager.gen_password(self.window)
@@ -382,40 +399,37 @@ class PasswordsManagerFrame:
 
 
 class EnrollKey:
-    def __init__(self, master: Gui) -> None:
-        self.window = TopLevelGui(
-            master=master, title="Generate Private Key", resizable=(False, False)
-        )
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel) -> None:
+        self.window = master
+        self.main_frame = MainFrame(main_label)
         self.window.create_label(
+            master=self.main_frame,
             txt="Enter Password",
-            pos_data={"relx": 0.3, "rely": 0.2, "anchor": "center"},
+            pos_data={"relx": 0.3, "rely": 0.15, "anchor": "center"},
         )
         self.window.create_label(
+            master=self.main_frame,
             txt="Confirm Password",
-            pos_data={"relx": 0.7, "rely": 0.2, "anchor": "center"},
+            pos_data={"relx": 0.7, "rely": 0.15, "anchor": "center"},
         )
         passwd = self.window.create_entry(
-            pos_data={"relx": 0.3, "rely": 0.3, "anchor": "center"}, show_text="*"
+            master=self.main_frame,
+            pos_data={"relx": 0.3, "rely": 0.25, "anchor": "center"},
+            show_text="*",
         )
         match = self.window.create_entry(
-            pos_data={"relx": 0.7, "rely": 0.3, "anchor": "center"}, show_text="*"
+            master=self.main_frame,
+            pos_data={"relx": 0.7, "rely": 0.25, "anchor": "center"},
+            show_text="*",
         )
         self.window.create_button(
+            master=self.main_frame,
             txt="Confirm",
             cmd=lambda: KeyManager.pkey_password_match(
-                passwd=passwd.get(), passwd_match=match.get(), gui=self.window
+                passwd=passwd.get(),
+                passwd_match=match.get(),
+                gui=self.window,
             ),
-            pos_data={
-                "relx": 0.5,
-                "rely": 0.5,
-                "anchor": "center",
-                "relwidth": 0.25,
-                "relheight": 0.08,
-            },
-            font=("Inter", 14),
-        )
-        self.window.create_button(
-            txt="Exit",
             pos_data={
                 "relx": 0.5,
                 "rely": 0.7,
@@ -423,41 +437,40 @@ class EnrollKey:
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=self.window.close_window,
+            font=("Inter", 14),
+        )
+        self.window.create_button(
+            master=self.main_frame,
+            txt="Go Back",
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.9,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
+            cmd=self.main_frame.move_forward,
             font=("Inter", 14),
         )
 
 
 class LoadKey:
-    def __init__(self, master: Gui) -> None:
-        self.window = TopLevelGui(
-            master=master, title="Load Private Key", resizable=(False, False)
-        )
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel) -> None:
+        self.window = master
+        self.main_frame = MainFrame(main_label)
         self.window.create_label(
+            master=self.main_frame,
             txt="Enter Password",
-            pos_data={"relx": 0.1, "rely": 0.3, "anchor": "center"},
+            pos_data={"relx": 0.5, "rely": 0.2, "anchor": "center"},
         )
         self.passwd = self.window.create_entry(
-            pos_data={"relx": 0.3, "rely": 0.3, "anchor": "center"}, show_text="*"
+            master=self.main_frame,
+            pos_data={"relx": 0.5, "rely": 0.3, "anchor": "center"},
+            show_text="*",
         )
         self.window.create_button(
+            master=self.main_frame,
             txt="Confirm",
-            pos_data={
-                "relx": 0.7,
-                "rely": 0.3,
-                "anchor": "center",
-                "relwidth": 0.25,
-                "relheight": 0.08,
-            },
-            cmd=lambda: KeyManager.get_pkey(
-                file_p=self.window.master.values.get("key_file"),
-                passwd=self.passwd.get(),
-                r_gui=self.window.master,
-                gui=self.window,
-            ),
-        )
-        self.window.create_button(
-            txt="Exit",
             pos_data={
                 "relx": 0.5,
                 "rely": 0.7,
@@ -465,55 +478,84 @@ class LoadKey:
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=self.window.close_window,
-        )
-        self.window.lock_main_window()
-
-
-class AddService:
-    def __init__(self, master: Gui, title: str) -> None:
-        self.window = TopLevelGui(master=master, title=title, resizable=(False, False))
-        self.window.create_label(
-            txt="Enter Service", pos_data={"relx": 0.2, "rely": 0.2, "anchor": "center"}
-        )
-        self.window.create_label(
-            txt="Enter Username",
-            pos_data={"relx": 0.5, "rely": 0.2, "anchor": "center"},
-        )
-        self.window.create_label(
-            txt="Enter Password",
-            pos_data={"relx": 0.8, "rely": 0.2, "anchor": "center"},
-        )
-        self.service = self.window.create_entry(
-            pos_data={"relx": 0.2, "rely": 0.3, "anchor": "center"}
-        )
-        self.username = self.window.create_entry(
-            pos_data={"relx": 0.5, "rely": 0.3, "anchor": "center"}
-        )
-        self.passwd = self.window.create_entry(
-            pos_data={"relx": 0.8, "rely": 0.3, "anchor": "center"}, show_text="*"
+            cmd=lambda: KeyManager.get_pkey(
+                file_p=self.window.values.get("key_file"),
+                passwd=self.passwd.get(),
+                gui=self.window,
+            ),
+            font=("Inter", 14),
         )
         self.window.create_button(
-            txt="Exit",
+            master=self.main_frame,
+            txt="Go Back",
             pos_data={
-                "relx": 0.8,
-                "rely": 0.7,
+                "relx": 0.5,
+                "rely": 0.9,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=self.window.close_window,
+            cmd=self.main_frame.move_forward,
+            font=("Inter", 14),
+        )
+
+
+class AddService:
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel) -> None:
+        self.window = master
+        self.main_frame = MainFrame(main_label)
+        self.window.create_label(
+            master=self.main_frame,
+            txt="Enter Service",
+            pos_data={"relx": 0.2, "rely": 0.2, "anchor": "center"},
+        )
+        self.window.create_label(
+            master=self.main_frame,
+            txt="Enter Username",
+            pos_data={"relx": 0.5, "rely": 0.2, "anchor": "center"},
+        )
+        self.window.create_label(
+            master=self.main_frame,
+            txt="Enter Password",
+            pos_data={"relx": 0.8, "rely": 0.2, "anchor": "center"},
+        )
+        self.service = self.window.create_entry(
+            master=self.main_frame,
+            pos_data={"relx": 0.2, "rely": 0.3, "anchor": "center"},
+        )
+        self.username = self.window.create_entry(
+            master=self.main_frame,
+            pos_data={"relx": 0.5, "rely": 0.3, "anchor": "center"},
+        )
+        self.passwd = self.window.create_entry(
+            master=self.main_frame,
+            pos_data={"relx": 0.8, "rely": 0.3, "anchor": "center"},
+            show_text="*",
+        )
+        self.window.create_button(
+            master=self.main_frame,
+            txt="Go Back",
+            pos_data={
+                "relx": 0.5,
+                "rely": 0.9,
+                "anchor": "center",
+                "relwidth": 0.25,
+                "relheight": 0.08,
+            },
+            cmd=self.main_frame.move_forward,
+            font=("Inter", 14),
         )
 
 
 class StoreService(AddService):
-    def __init__(self, master: Gui, title: str) -> None:
-        super().__init__(master, title)
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel) -> None:
+        super().__init__(master, main_label)
 
         self.window.create_button(
+            master=self.main_frame,
             txt="Save & Encrypt",
             pos_data={
-                "relx": 0.2,
+                "relx": 0.5,
                 "rely": 0.7,
                 "anchor": "center",
                 "relwidth": 0.25,
@@ -521,56 +563,58 @@ class StoreService(AddService):
             },
             cmd=lambda: FileManager.write_storefile(
                 gui=self.window,
-                r_gui=self.window.master,
                 payload={
                     "service": self.service.get(),
                     "username": self.username.get(),
                     "password": self.passwd.get(),
                 },
             ),
+            font=("Inter", 14),
         )
-        self.window.lock_main_window()
 
 
 class UpdateService(AddService):
-    def __init__(self, master: Gui, title: str) -> None:
-        super().__init__(master, title)
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel) -> None:
+        super().__init__(master, main_label)
 
         self.window.create_button(
+            master=self.main_frame,
             txt="Update & Encrypt",
             pos_data={
                 "relx": 0.2,
-                "rely": 0.7,
+                "rely": 0.9,
                 "anchor": "center",
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
             cmd=lambda: FileManager.update_password(
-                r_gui=self.window.master.master,
                 gui=self.window,
-                main_gui=self.window.master,
                 payload={
                     "service": self.service.get(),
                     "username": self.username.get(),
                     "password": self.passwd.get(),
                 },
             ),
+            font=("Inter", 14),
         )
-        self.window.lock_main_window()
 
 
 class SearchService:
-    def __init__(self, master: Gui) -> None:
-        self.window = TopLevelGui(
-            master=master, title="Search Password", resizable=(False, False)
-        )
+    def __init__(self, master: Gui, main_label: ctk.CTkLabel) -> None:
+        self.window = master
+        self.main_label = main_label
+        self.main_frame = MainFrame(main_label)
         self.window.create_label(
-            txt="Enter Service", pos_data={"relx": 0.2, "rely": 0.2, "anchor": "center"}
+            master=self.main_frame,
+            txt="Enter Service",
+            pos_data={"relx": 0.2, "rely": 0.2, "anchor": "center"},
         )
         self.service = self.window.create_entry(
-            pos_data={"relx": 0.2, "rely": 0.3, "anchor": "center"}
+            master=self.main_frame,
+            pos_data={"relx": 0.2, "rely": 0.3, "anchor": "center"},
         )
         self.window.create_button(
+            master=self.main_frame,
             txt="Search",
             pos_data={
                 "relx": 0.2,
@@ -580,8 +624,10 @@ class SearchService:
                 "relheight": 0.08,
             },
             cmd=self.search_password,
+            font=("Inter", 14),
         )
         self.updated_passwd_btn = self.window.create_button(
+            master=self.main_frame,
             txt="Update Password",
             pos_data={
                 "relx": 0.5,
@@ -590,10 +636,14 @@ class SearchService:
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=self.update_password,
+            cmd=lambda: UpdateService(
+                self.window, self.main_label
+            ).main_frame.move_backward(),
             state="disabled",
+            font=("Inter", 14),
         )
         self.delete_passwd_btn = self.window.create_button(
+            master=self.main_frame,
             txt="Delete Password",
             pos_data={
                 "relx": 0.8,
@@ -602,11 +652,13 @@ class SearchService:
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=self.delete_password,
+            cmd=lambda: FileManager.delete_password(self.window),
             state="disabled",
+            font=("Inter", 14),
         )
         self.window.create_button(
-            txt="Exit",
+            master=self.main_frame,
+            txt="Go Back",
             pos_data={
                 "relx": 0.5,
                 "rely": 0.9,
@@ -614,42 +666,18 @@ class SearchService:
                 "relwidth": 0.25,
                 "relheight": 0.08,
             },
-            cmd=self.window.destroy,
+            cmd=self.main_frame.move_forward,
+            font=("Inter", 14),
         )
-        self.passwd_found_box: Optional[ctk.CTkTextbox] = None
-        self.window.lock_main_window()
+        self.window.values |= {
+            "passwd_found_box": self.window.create_textbox(
+                master=self.main_frame,
+                pos_data={"relx": 0.8, "rely": 0.4, "anchor": "center"},
+                data={"index": "0.0", "text": ""},
+            )
+        }
 
     def search_password(self) -> None:
-        FileManager.search_password(
-            service=self.service.get(), r_gui=self.window.master, gui=self.window
-        )
-        passwd_found = self.window.values.get("passwd_found")
-        if passwd_found is None:
-            return None
-        text = f"Service: {passwd_found["service"]}\nUsername: {passwd_found["username"]}\nPassword: {passwd_found["password"]}"
-        self.passwd_found_box = self.window.create_textbox(
-            pos_data={"relx": 0.8, "rely": 0.4, "anchor": "center"},
-            data={"index": "0.0", "text": text},
-        )
-        self.window.update_button_content(
-            btn=self.updated_passwd_btn, cnt={"state": "normal"}
-        )
-        self.window.update_button_content(
-            btn=self.delete_passwd_btn, cnt={"state": "normal"}
-        )
-
-    def update_password(self) -> None:
-        gui = UpdateService(self.window, "Update Password")
-        self.window.open_toplevel_window(gui.window)
-        passwd_found = self.window.values.get("passwd_found")
-        box_cnt = {
-            "index": "0.0",
-            "text": f"Service: {passwd_found["service"]}\nUsername: {passwd_found["username"]}\nPassword: {passwd_found["password"]}",
-        }
-        self.window.update_textbox_content(box=self.passwd_found_box, cnt=box_cnt)
-
-    def delete_password(self) -> None:
-        FileManager.delete_password(r_gui=self.window.master, gui=self.window)
-        box_cnt = {"index": "0.0", "text": ""}
-        self.window.update_textbox_content(box=self.passwd_found_box, cnt=box_cnt)
-        del self.window.values["passwd_found"]
+        FileManager.search_password(service=self.service.get(), gui=self.window)
+        self.updated_passwd_btn.configure(state="normal")
+        self.delete_passwd_btn.configure(state="normal")

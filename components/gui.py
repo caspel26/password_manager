@@ -19,6 +19,7 @@ class BaseGui:
         corner_r: int = 0,
         border_w: int = 1,
         fg_c: str = "transparent",
+        bg_c: str = "#242424",
     ) -> ctk.CTkFrame:
         if master is None:
             master = self
@@ -27,6 +28,7 @@ class BaseGui:
             corner_radius=corner_r,
             border_width=border_w,
             fg_color=fg_c,
+            bg_color=bg_c,
         )
         frame.place(**pos_data)
         return frame
@@ -190,7 +192,6 @@ class BaseGui:
                 title="Error",
                 message=f"IMAGE: {e}",
                 icon="error",
-                fade_in_duration=0.2,
                 sound=True,
             )
             exit(1)

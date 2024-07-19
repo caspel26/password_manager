@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
-from components.gui import Gui, TopLevelGui
+from components import Gui, TopLevelGui
 from .config import FILES_TYPE
 
 
@@ -79,7 +79,7 @@ class FileManager:
 
     @classmethod
     def overwrite_storefile(
-        cls, path: str, data: list[str], gui: TopLevelGui, r_gui: Gui
+        cls, path: str, data: list[str], gui: Gui
     ):
         # BACKUP FILE
         path_bak = cls.get_file_backup(path)
@@ -97,7 +97,7 @@ class FileManager:
         # OVERWRITE FILE
         new_data = []
         for d in data:
-            b64_data = KeyManager.encrypt_message(payload=d, gui=gui, r_gui=r_gui)
+            b64_data = KeyManager.encrypt_message(payload=d, gui=gui)
             new_data.append(b64_data)
         for line in new_data:
             with open(path, "a") as f:
@@ -107,16 +107,14 @@ class FileManager:
                     f.write("\n" + line)
 
     @classmethod
-    def write_storefile(
-        cls, gui: TopLevelGui, r_gui: Gui, payload: dict[str, str]
-    ) -> None:
-        data = KeyManager.encrypt_message(payload=payload, gui=gui, r_gui=r_gui)
-        file_p = r_gui.values.get("passwds")
+    def write_storefile(cls, gui: Gui, payload: dict[str, str]) -> None:
+        data = KeyManager.encrypt_message(payload=payload, gui=gui)
+        file_p = gui.values.get("passwds")
         if data is None:
             return gui.show_messages("Error", "No encrypted data stored")
         if file_p is None:
             file_p = cls.get_file_to_save(gui=gui)
-            cls.load_passwords_file(file_p=file_p, gui=r_gui)
+            cls.load_passwords_file(file_p=file_p, gui=gui)
 
         with open(file_p, "a") as f:
             if cls.file_lines_count(path=file_p) == 0:
@@ -126,8 +124,8 @@ class FileManager:
         return gui.show_messages("Success", "Data saved")
 
     @classmethod
-    def search_password(cls, service: str, r_gui: Gui, gui: TopLevelGui) -> None:
-        passwords = r_gui.values.get("passwds_data_dec")
+    def search_password(cls, service: str, gui: Gui) -> None:
+        passwords = gui.values.get("passwds_data_dec")
         passwd_found = None
         for passwd in passwords:
             if service == passwd["service"]:
@@ -138,40 +136,56 @@ class FileManager:
                 "Warning", "There is not a stored password for this service"
             )
         gui.values["passwd_found"] = passwd_found
+        text = f"Service: {passwd_found["service"]}\nUsername: {passwd_found["username"]}\nPassword: {passwd_found["password"]}"
+        gui.values["passwd_found_box"] = gui.update_textbox_content(
+            box=gui.values["passwd_found_box"],
+            cnt={"index": "0.0", "text": text},
+        )
         return gui.show_messages("Success", "Password found")
 
     @classmethod
     def update_password(
-        cls, r_gui: Gui, gui: TopLevelGui, main_gui: Gui, payload: dict[str, str]
+        cls, gui: Gui, payload: dict[str, str]
     ) -> None:
         index = 0
-        old_passwd = main_gui.values.get("passwd_found")
-        file_p: str = r_gui.values.get("passwds")
-        passwords: list[dict] = r_gui.values.get("passwds_data_dec")
+        old_passwd = gui.values.get("passwd_found")
+        file_p: str = gui.values.get("passwds")
+        passwords: list[dict] = gui.values.get("passwds_data_dec")
         for passwd in passwords:
             if old_passwd["service"] != passwd["service"]:
                 index += 1
                 continue
             passwords[index] = payload
-        r_gui.values["passwds_data_dec"] = passwords
-        main_gui.values["passwd_found"] = payload
-        cls.overwrite_storefile(path=file_p, data=passwords, gui=gui, r_gui=r_gui)
-        gui.show_messages("Success", "Password successfuly updated")
-        return gui.close_window()
+        gui.values["passwds_data_dec"] = passwords
+        gui.values["passwd_found"] = payload
+        cls.overwrite_storefile(path=file_p, data=passwords, gui=gui)
+        box_cnt = {
+            "index": "0.0",
+            "text": f"Service: {payload["service"]}\nUsername: {payload["username"]}\nPassword: {payload["password"]}",
+        }
+        gui.values["passwd_found_box"] = gui.update_textbox_content(
+            box=gui.values["passwd_found_box"], cnt=box_cnt
+        )
+        return gui.show_messages("Success", "Password successfuly updated")
 
     @classmethod
-    def delete_password(cls, r_gui: Gui, gui: TopLevelGui):
+    def delete_password(cls, gui: Gui):
         index = 0
         passwd_to_del = gui.values["passwd_found"]
-        passwords: list[dict] = r_gui.values["passwds_data_dec"]
-        file_p: str = r_gui.values["passwds"]
+        passwords: list[dict] = gui.values["passwds_data_dec"]
+        file_p: str = gui.values["passwds"]
         for passwd in passwords:
             if passwd_to_del != passwd:
                 index += 1
                 continue
             passwords.pop(index)
-            r_gui.values["passwds_data_dec"] = passwords
-        cls.overwrite_storefile(path=file_p, data=passwords, gui=gui, r_gui=r_gui)
+            gui.values["passwds_data_dec"] = passwords
+        cls.overwrite_storefile(path=file_p, data=passwords, gui=gui)
+        box_cnt = {"index": "0.0", "text": ""}
+        gui.values["passwd_found_box"] = gui.update_textbox_content(
+            box=gui.values["passwd_found_box"], cnt=box_cnt
+        )
+        del gui.values["passwd_found"]
         return gui.show_messages("Success", "Password successfuly deleted")
 
 
@@ -190,39 +204,37 @@ class KeyManager:
         return priv_pem
 
     @classmethod
-    def pkey_password_match(
-        cls, passwd: str, passwd_match: str, gui: TopLevelGui
-    ) -> None:
+    def pkey_password_match(cls, passwd: str, passwd_match: str, gui: Gui) -> None:
         if passwd != passwd_match:
             return gui.show_messages("Error", "Password mismatch")
         pkey = cls.generate_pkey(passwd)
         FileManager.save_file(pkey, gui)
-        gui.show_messages("Success", "Key created")
-        return gui.close_window()
+        return gui.show_messages("Success", "Key created")
 
     @classmethod
-    def get_pkey(cls, file_p: str, passwd: str, r_gui: Gui, gui: TopLevelGui) -> None:
+    def get_pkey(cls, file_p: str, passwd: str, gui: Gui) -> None:
         with open(file_p, "rb") as keyfile:
             try:
                 pkey = serialization.load_pem_private_key(
                     keyfile.read(), password=passwd.encode()
                 )
-                r_gui.values["pkey"] = pkey
-                r_gui.values["pubkey"] = pkey.public_key()
-                r_gui.values["pkey_name"] = FileManager.get_filename(file_p)
+                gui.values["pkey"] = pkey
+                gui.values["pubkey"] = pkey.public_key()
+                gui.values["pkey_name"] = FileManager.get_filename(file_p)
             except ValueError as e:
                 return gui.show_messages("Error", e)
-        r_gui.show_messages("Check", "Key successfuly loaded")
-        return gui.close_window()
+        gui.show_messages("Check", "Key successfuly loaded")
+        gui.values["pkey_lbl"].configure(
+            text=f"Current Key:\n{gui.values.get("pkey_name")}"
+        )
 
     @classmethod
     def encrypt_message(
         cls,
         payload: dict[str, str],
-        gui: TopLevelGui,
-        r_gui: Gui,
+        gui: Gui,
     ) -> str | None:
-        key: rsa.RSAPublicKey = r_gui.values.get("pubkey")
+        key: rsa.RSAPublicKey = gui.values.get("pubkey")
         if key is None:
             gui.show_messages("Error", "No key loaded")
             return gui.close_window()
