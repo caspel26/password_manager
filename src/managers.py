@@ -79,9 +79,7 @@ class FileManager:
         return count
 
     @classmethod
-    def overwrite_storefile(
-        cls, path: str, data: list[str], gui: Gui
-    ):
+    def overwrite_storefile(cls, path: str, data: list[str], gui: Gui):
         # BACKUP FILE
         path_bak = cls.get_file_backup(path)
         f = open(path, "r+")
@@ -96,10 +94,7 @@ class FileManager:
         f.close()
 
         # OVERWRITE FILE
-        new_data = []
-        for d in data:
-            b64_data = KeyManager.encrypt_message(payload=d, gui=gui)
-            new_data.append(b64_data)
+        new_data = [KeyManager.encrypt_message(d, gui) for d in data]
         for line in new_data:
             with open(path, "a") as f:
                 if cls.file_lines_count(path) == 0:
@@ -145,9 +140,7 @@ class FileManager:
         return gui.show_messages("Success", "Password found")
 
     @classmethod
-    def update_password(
-        cls, gui: Gui, payload: dict[str, str]
-    ) -> None:
+    def update_password(cls, gui: Gui, payload: dict[str, str]) -> None:
         index = 0
         old_passwd = gui.values.get("passwd_found")
         file_p: str = gui.values.get("passwds")
