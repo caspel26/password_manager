@@ -1,4 +1,5 @@
 import json
+import secrets
 import random
 import string
 import base64
@@ -283,19 +284,19 @@ class KeyManager:
 class PasswordManager:
     @classmethod
     def gen_lowercase(cls, length: int):
-        return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+        return "".join(secrets.choice(string.ascii_lowercase) for _ in range(length))
 
     @classmethod
     def gen_uppercase(cls, length: int):
-        return "".join(random.choice(string.ascii_uppercase) for _ in range(length))
+        return "".join(secrets.choice(string.ascii_uppercase) for _ in range(length))
 
     @classmethod
     def gen_digits(cls, length: int):
-        return "".join(random.choice(string.digits) for _ in range(length))
+        return "".join(secrets.choice(string.digits) for _ in range(length))
 
     @classmethod
     def gen_special_chars(cls, length: int):
-        return "".join(random.choice(string.punctuation) for _ in range(length))
+        return "".join(secrets.choice(string.punctuation) for _ in range(length))
 
     @classmethod
     def validate_password(cls, password: str):
