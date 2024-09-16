@@ -37,4 +37,4 @@ python .
 ```
 
 ## 📌 Notes
-- Feel free to contribute and improve the program. For example, there is currently no functionality to change passwords already saved. 🛠️
+- Feel free to contribute and improve the program. 🛠️
