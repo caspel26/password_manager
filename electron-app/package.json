@@ -1,0 +1,44 @@
+{
+  "name": "electron-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vue\" \"npm run dev:electron\"",
+    "dev:vue": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron . ",
+    "electron": "electron .",
+    "build": "electron-builder",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build",
+    "lint": "eslint . --fix"
+  },
+  "main": "main.cjs",
+  "dependencies": {
+    "pinia": "^3.0.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vuetify": "^3.7.13"
+  },
+  "devDependencies": {
+    "@electron/remote": "^2.1.2",
+    "@tsconfig/node22": "^22.0.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-typescript": "^14.4.0",
+    "@vue/tsconfig": "^0.7.0",
+    "concurrently": "^9.1.2",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "electron-reload": "^2.0.0-alpha.1",
+    "eslint": "^9.20.1",
+    "eslint-plugin-vue": "^9.32.0",
+    "jiti": "^2.4.2",
+    "npm-run-all2": "^7.0.2",
+    "typescript": "~5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "vue-tsc": "^2.2.2",
+    "wait-on": "^8.0.2"
+  }
+}
