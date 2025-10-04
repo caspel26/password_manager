@@ -1,5 +1,4 @@
 <template>
-  <v-app>
     <v-toolbar app flat density="compact" color="primary">
       <v-row>
         <v-col cols="3">
@@ -12,7 +11,6 @@
         </template>
       </v-switch>
     </v-toolbar>
-  </v-app>
 </template>
 
 <script setup lang="ts">
