@@ -12,4 +12,7 @@ html, body, #app {
   margin: 0;
   overflow: hidden;
 }
+.v-stepper-header {
+        display: none !important;
+    }
 </style>
