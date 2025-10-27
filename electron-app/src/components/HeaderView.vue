@@ -2,12 +2,12 @@
     <v-toolbar app flat density="compact" color="primary">
       <v-row>
         <v-col cols="3">
-          <v-img src="/favicon.ico" width="50" height="50" class="ml-2"></v-img>
+          <v-img src="/favicon.ico" width="40" height="50" class="ml-2"></v-img>
         </v-col>
       </v-row>
       <v-switch class="mt-5 mr-2" v-model="isDarkTheme" @change="toggleTheme" inset>
         <template v-slot:thumb>
-          <img :src="themeIcon" alt="Theme Icon" class="theme-icon"/>
+          <img width="40" height="50" :src="themeIcon" alt="Theme Icon" class="theme-icon"/>
         </template>
       </v-switch>
     </v-toolbar>
