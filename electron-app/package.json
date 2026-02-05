@@ -1,18 +1,20 @@
 {
   "name": "electron-app",
-  "version": "0.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:vue\" \"npm run dev:electron\"",
     "dev:vue": "vite",
-    "dev:electron": "wait-on http://localhost:5173 && electron . ",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
     "electron": "electron .",
-    "build": "electron-builder",
+    "build": "vite build && electron-builder",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "main": "main.cjs",
   "dependencies": {
@@ -23,21 +25,24 @@
   },
   "devDependencies": {
     "@electron/remote": "^2.1.2",
+    "@mdi/font": "^7.4.47",
     "@tsconfig/node22": "^22.0.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/eslint-config-typescript": "^14.4.0",
+    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
     "concurrently": "^9.1.2",
     "electron": "^34.5.8",
     "electron-builder": "^25.1.8",
-    "electron-reload": "^2.0.0-alpha.1",
     "eslint": "^9.20.1",
     "eslint-plugin-vue": "^9.32.0",
+    "happy-dom": "^17.6.3",
     "jiti": "^2.4.2",
     "npm-run-all2": "^7.0.2",
     "typescript": "~5.7.3",
     "vite": "^6.1.0",
     "vite-plugin-vue-devtools": "^7.7.2",
+    "vitest": "^3.2.4",
     "vue-tsc": "^2.2.2",
     "wait-on": "^8.0.2"
   }
