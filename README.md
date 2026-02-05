@@ -2,7 +2,6 @@
 
 > **⚠️ This Python implementation is deprecated.**
 > It has been replaced by a desktop Electron app with AES-256-GCM encryption, a modern UI, and improved security.
-> See [`electron-app/`](electron-app/) for the new version.
 
 ---
 
