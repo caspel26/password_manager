@@ -1,6 +1,6 @@
 import { ref, computed, toRaw } from 'vue'
 import { defineStore } from 'pinia'
-import type { VaultEntry } from '@/types/electron'
+import type { VaultEntry, VaultSettings } from '@/types/electron'
 
 export const useVaultStore = defineStore('vault', () => {
   // ── State ──────────────────────────────────────────────────
@@ -10,24 +10,41 @@ export const useVaultStore = defineStore('vault', () => {
   const searchQuery = ref('')
   const generatedPassword = ref<string | null>(null)
   const snackbar = ref({ show: false, message: '', color: 'success' })
+  const settings = ref<VaultSettings>({
+    autoLockMinutes: 5,
+    autoLockEnabled: true,
+  })
 
   // ── Computed ───────────────────────────────────────────────
   const filteredEntries = computed(() => {
     const q = searchQuery.value.toLowerCase().trim()
-    if (!q) return entries.value
-    return entries.value.filter(
-      (e) =>
-        e.service.toLowerCase().includes(q) ||
-        e.username.toLowerCase().includes(q) ||
-        e.url.toLowerCase().includes(q),
-    )
+    let result = entries.value
+    if (q) {
+      result = result.filter(
+        (e) =>
+          e.service.toLowerCase().includes(q) ||
+          e.username.toLowerCase().includes(q) ||
+          e.url.toLowerCase().includes(q),
+      )
+    }
+    // Sort favorites first, then by service name
+    return result.sort((a, b) => {
+      if (a.favorite && !b.favorite) return -1
+      if (!a.favorite && b.favorite) return 1
+      return a.service.localeCompare(b.service)
+    })
   })
 
   const entryCount = computed(() => entries.value.length)
+  const favoriteCount = computed(() => entries.value.filter((e) => e.favorite).length)
 
   // ── Helpers ────────────────────────────────────────────────
   function notify(message: string, color: 'success' | 'error' | 'warning' | 'info' = 'success') {
     snackbar.value = { show: true, message, color }
+  }
+
+  function trackActivity() {
+    window.electronAPI.activity()
   }
 
   // ── Vault lifecycle ────────────────────────────────────────
@@ -41,6 +58,7 @@ export const useVaultStore = defineStore('vault', () => {
     unlocked.value = true
     vaultName.value = res.vaultName || null
     entries.value = []
+    settings.value = res.settings || { autoLockMinutes: 5, autoLockEnabled: true }
     notify('Vault created')
     return true
   }
@@ -53,6 +71,7 @@ export const useVaultStore = defineStore('vault', () => {
     unlocked.value = true
     vaultName.value = res.vaultName || null
     entries.value = res.entries || []
+    settings.value = res.settings || { autoLockMinutes: 5, autoLockEnabled: true }
     return true
   }
 
@@ -67,12 +86,13 @@ export const useVaultStore = defineStore('vault', () => {
 
   // ── Entry CRUD ─────────────────────────────────────────────
   async function addEntry(data: {
-    service: string; username: string; password: string; url?: string; notes?: string
+    service: string; username: string; password: string; url?: string; notes?: string; favorite?: boolean
   }) {
     if (!data.service || !data.username || !data.password) {
       notify('Service, username, and password are required', 'error')
       return false
     }
+    trackActivity()
     const res = await window.electronAPI.addEntry({ ...toRaw(data) })
     if (!res.success) { notify(res.error || 'Failed to add entry', 'error'); return false }
     if (res.entry) entries.value.push(res.entry)
@@ -81,12 +101,13 @@ export const useVaultStore = defineStore('vault', () => {
   }
 
   async function updateEntry(data: {
-    id: string; service: string; username: string; password: string; url?: string; notes?: string
+    id: string; service: string; username: string; password: string; url?: string; notes?: string; favorite?: boolean
   }) {
     if (!data.service || !data.username || !data.password) {
       notify('Service, username, and password are required', 'error')
       return false
     }
+    trackActivity()
     const res = await window.electronAPI.updateEntry({ ...toRaw(data) })
     if (!res.success) { notify(res.error || 'Failed to update', 'error'); return false }
     const idx = entries.value.findIndex((e) => e.id === data.id)
@@ -96,6 +117,7 @@ export const useVaultStore = defineStore('vault', () => {
   }
 
   async function deleteEntry(id: string) {
+    trackActivity()
     const res = await window.electronAPI.deleteEntry(id)
     if (!res.success) { notify(res.error || 'Failed to delete', 'error'); return false }
     entries.value = entries.value.filter((e) => e.id !== id)
@@ -103,8 +125,28 @@ export const useVaultStore = defineStore('vault', () => {
     return true
   }
 
+  async function toggleFavorite(id: string) {
+    trackActivity()
+    const res = await window.electronAPI.toggleFavorite(id)
+    if (!res.success) { notify(res.error || 'Failed to update favorite', 'error'); return false }
+    const idx = entries.value.findIndex((e) => e.id === id)
+    if (idx !== -1 && res.entry) entries.value[idx] = res.entry
+    return true
+  }
+
+  // ── Settings ───────────────────────────────────────────────
+  async function updateSettings(newSettings: Partial<VaultSettings>) {
+    trackActivity()
+    const res = await window.electronAPI.updateSettings(newSettings)
+    if (!res.success) { notify(res.error || 'Failed to update settings', 'error'); return false }
+    if (res.settings) settings.value = res.settings
+    notify('Settings saved')
+    return true
+  }
+
   // ── Password generator ─────────────────────────────────────
   async function generatePassword(length?: number) {
+    trackActivity()
     const res = await window.electronAPI.generatePassword(length)
     if (!res.success) { notify(res.error || 'Generation failed', 'error'); return null }
     generatedPassword.value = res.password || null
@@ -118,15 +160,20 @@ export const useVaultStore = defineStore('vault', () => {
     searchQuery,
     generatedPassword,
     snackbar,
+    settings,
     filteredEntries,
     entryCount,
+    favoriteCount,
     notify,
+    trackActivity,
     createVault,
     unlock,
     lock,
     addEntry,
     updateEntry,
     deleteEntry,
+    toggleFavorite,
+    updateSettings,
     generatePassword,
   }
 })

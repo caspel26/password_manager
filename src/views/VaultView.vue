@@ -20,6 +20,7 @@
     <div class="search-wrapper">
       <v-icon class="search-icon" size="14">mdi-magnify</v-icon>
       <input
+        ref="searchInput"
         v-model="store.searchQuery"
         type="text"
         placeholder="Search..."
@@ -56,9 +57,15 @@
           {{ entry.service.charAt(0).toUpperCase() }}
         </div>
         <div class="entry-info">
-          <div class="entry-service">{{ entry.service }}</div>
+          <div class="entry-service">
+            <span>{{ entry.service }}</span>
+            <v-icon v-if="entry.favorite" size="12" class="fav-icon">mdi-star</v-icon>
+          </div>
           <div class="entry-username">{{ entry.username }}</div>
         </div>
+        <button class="fav-btn" @click.stop="toggleFav(entry.id)">
+          <v-icon size="14">{{ entry.favorite ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+        </button>
         <button class="copy-btn" @click.stop="copyPassword(entry.password)">
           <v-icon size="14">mdi-content-copy</v-icon>
         </button>
@@ -79,7 +86,9 @@
             <v-icon size="18">mdi-arrow-left</v-icon>
           </button>
           <span class="detail-title">{{ editing ? 'Edit' : 'Details' }}</span>
-          <div style="width: 32px"></div>
+          <button class="fav-header-btn" @click="toggleFav(selectedEntry.id)">
+            <v-icon size="18">{{ selectedEntry.favorite ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+          </button>
         </div>
 
         <!-- View mode -->
@@ -132,6 +141,28 @@
           <div v-if="selectedEntry.notes" class="notes-card">
             <span class="notes-label">Notes</span>
             <p class="notes-text">{{ selectedEntry.notes }}</p>
+          </div>
+
+          <!-- Password History -->
+          <div v-if="selectedEntry.passwordHistory?.length" class="history-card">
+            <div class="history-header" @click="showHistory = !showHistory">
+              <span class="history-label">Password History</span>
+              <v-icon size="14">{{ showHistory ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+            </div>
+            <div v-if="showHistory" class="history-list">
+              <div v-for="(h, i) in selectedEntry.passwordHistory" :key="i" class="history-item">
+                <div class="history-info">
+                  <code class="history-pwd">{{ showHistoryPwd[i] ? h.password : '••••••••' }}</code>
+                  <span class="history-date">{{ formatDate(h.changedAt) }}</span>
+                </div>
+                <button class="field-action" @click="showHistoryPwd[i] = !showHistoryPwd[i]">
+                  <v-icon size="12">{{ showHistoryPwd[i] ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                </button>
+                <button class="field-action" @click="copyText(h.password)">
+                  <v-icon size="12">mdi-content-copy</v-icon>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="meta-info">
@@ -252,12 +283,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useVaultStore } from '@/stores/passwordManager'
 import type { VaultEntry } from '@/types/electron'
 
 const store = useVaultStore()
 
+const searchInput = ref<HTMLInputElement | null>(null)
 const showDetail = ref(false)
 const showAdd = ref(false)
 const selectedEntry = ref<VaultEntry | null>(null)
@@ -267,6 +299,8 @@ const deleteLoading = ref(false)
 const showDetailPwd = ref(false)
 const showEditPwd = ref(false)
 const showAddPwd = ref(false)
+const showHistory = ref(false)
+const showHistoryPwd = ref<boolean[]>([])
 
 const emptyForm = () => ({ service: '', username: '', password: '', url: '', notes: '' })
 const addForm = ref(emptyForm())
@@ -292,6 +326,8 @@ function selectEntry(entry: VaultEntry) {
   selectedEntry.value = entry
   editing.value = false
   showDetailPwd.value = false
+  showHistory.value = false
+  showHistoryPwd.value = (entry.passwordHistory || []).map(() => false)
   showDetail.value = true
 }
 
@@ -353,6 +389,13 @@ async function fillGenerated(form: { password: string }) {
   if (pw) form.password = pw
 }
 
+async function toggleFav(id: string) {
+  await store.toggleFavorite(id)
+  if (selectedEntry.value?.id === id) {
+    selectedEntry.value = store.entries.find((e) => e.id === id) || null
+  }
+}
+
 function copyText(text: string) {
   navigator.clipboard.writeText(text)
   store.notify('Copied', 'info')
@@ -366,6 +409,28 @@ function copyPassword(pw: string) {
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+// Expose methods for keyboard shortcuts
+function openNewEntry() {
+  showAdd.value = true
+}
+
+function focusSearch() {
+  searchInput.value?.focus()
+}
+
+// Register keyboard shortcut listeners
+onMounted(() => {
+  window.electronAPI.onShortcutNewEntry(() => openNewEntry())
+  window.electronAPI.onShortcutSearch(() => focusSearch())
+})
+
+onUnmounted(() => {
+  window.electronAPI.removeAllListeners('shortcut:new-entry')
+  window.electronAPI.removeAllListeners('shortcut:search')
+})
+
+defineExpose({ openNewEntry, focusSearch })
 </script>
 
 <style scoped>
@@ -541,7 +606,8 @@ function formatDate(iso: string) {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.entry-card:hover .copy-btn {
+.entry-card:hover .copy-btn,
+.entry-card:hover .fav-btn {
   opacity: 1;
 }
 
@@ -564,12 +630,23 @@ function formatDate(iso: string) {
 }
 
 .entry-service {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 600;
   color: #fff;
+}
+
+.entry-service span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.fav-icon {
+  color: #f39c12;
+  flex-shrink: 0;
 }
 
 .entry-username {
@@ -578,6 +655,26 @@ function formatDate(iso: string) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.fav-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.fav-btn:hover {
+  color: #f39c12;
 }
 
 .copy-btn {
@@ -637,6 +734,24 @@ function formatDate(iso: string) {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
+}
+
+.fav-header-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+
+.fav-header-btn:hover {
+  color: #f39c12;
 }
 
 .detail-body {
@@ -756,6 +871,68 @@ function formatDate(iso: string) {
   margin: 0;
   white-space: pre-wrap;
   line-height: 1.5;
+}
+
+/* Password History */
+.history-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.history-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.history-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.history-list {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-pwd {
+  display: block;
+  font-family: 'SF Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.history-date {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .meta-info {

@@ -12,7 +12,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addEntry: (entry) => ipcRenderer.invoke('vault:addEntry', entry),
   updateEntry: (entry) => ipcRenderer.invoke('vault:updateEntry', entry),
   deleteEntry: (id) => ipcRenderer.invoke('vault:deleteEntry', { id }),
+  toggleFavorite: (id) => ipcRenderer.invoke('vault:toggleFavorite', { id }),
+
+  // Settings
+  getSettings: () => ipcRenderer.invoke('vault:getSettings'),
+  updateSettings: (settings) => ipcRenderer.invoke('vault:updateSettings', settings),
 
   // Utility
   generatePassword: (length) => ipcRenderer.invoke('vault:generatePassword', { length }),
+  activity: () => ipcRenderer.invoke('vault:activity'),
+
+  // Event listeners
+  onShortcutNewEntry: (callback) => ipcRenderer.on('shortcut:new-entry', callback),
+  onShortcutLock: (callback) => ipcRenderer.on('shortcut:lock', callback),
+  onShortcutSearch: (callback) => ipcRenderer.on('shortcut:search', callback),
+  onShortcutGenerator: (callback) => ipcRenderer.on('shortcut:generator', callback),
+  onAutoLocked: (callback) => ipcRenderer.on('vault:auto-locked', callback),
+  removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
 })

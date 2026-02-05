@@ -11,7 +11,17 @@ const mockElectronAPI = {
   addEntry: vi.fn(),
   updateEntry: vi.fn(),
   deleteEntry: vi.fn(),
+  toggleFavorite: vi.fn(),
+  getSettings: vi.fn(),
+  updateSettings: vi.fn(),
   generatePassword: vi.fn(),
+  activity: vi.fn().mockResolvedValue({ success: true }),
+  onShortcutNewEntry: vi.fn(),
+  onShortcutLock: vi.fn(),
+  onShortcutSearch: vi.fn(),
+  onShortcutGenerator: vi.fn(),
+  onAutoLocked: vi.fn(),
+  removeAllListeners: vi.fn(),
 }
 
 vi.stubGlobal('window', {
@@ -85,7 +95,7 @@ describe('Vault Store', () => {
 
     it('should unlock and load entries on success', async () => {
       const entries = [
-        { id: '1', service: 'github', username: 'u', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'github', username: 'u', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
       mockElectronAPI.unlockVault.mockResolvedValue({
         success: true,
@@ -122,7 +132,7 @@ describe('Vault Store', () => {
       const store = useVaultStore()
       store.unlocked = true
       store.vaultName = 'test.vault'
-      store.entries = [{ id: '1', service: 's', username: 'u', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' }]
+      store.entries = [{ id: '1', service: 's', username: 'u', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' }]
       store.searchQuery = 'query'
 
       await store.lock()
@@ -192,8 +202,8 @@ describe('Vault Store', () => {
 
       const store = useVaultStore()
       store.entries = [
-        { id: '1', service: 'a', username: 'u', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
-        { id: '2', service: 'b', username: 'u', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'a', username: 'u', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
+        { id: '2', service: 'b', username: 'u', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
 
       expect(await store.deleteEntry('1')).toBe(true)
@@ -206,7 +216,7 @@ describe('Vault Store', () => {
 
       const store = useVaultStore()
       store.entries = [
-        { id: '1', service: 'a', username: 'u', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'a', username: 'u', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
 
       expect(await store.deleteEntry('1')).toBe(false)
@@ -243,8 +253,8 @@ describe('Vault Store', () => {
     it('should return all entries when search is empty', () => {
       const store = useVaultStore()
       store.entries = [
-        { id: '1', service: 'GitHub', username: 'u1', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
-        { id: '2', service: 'GitLab', username: 'u2', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'GitHub', username: 'u1', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
+        { id: '2', service: 'GitLab', username: 'u2', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
       store.searchQuery = ''
       expect(store.filteredEntries).toHaveLength(2)
@@ -253,9 +263,9 @@ describe('Vault Store', () => {
     it('should filter by service name', () => {
       const store = useVaultStore()
       store.entries = [
-        { id: '1', service: 'GitHub', username: 'u1', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
-        { id: '2', service: 'GitLab', username: 'u2', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
-        { id: '3', service: 'Slack', username: 'u3', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'GitHub', username: 'u1', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
+        { id: '2', service: 'GitLab', username: 'u2', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
+        { id: '3', service: 'Slack', username: 'u3', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
       store.searchQuery = 'git'
       expect(store.filteredEntries).toHaveLength(2)
@@ -264,8 +274,8 @@ describe('Vault Store', () => {
     it('should filter by username', () => {
       const store = useVaultStore()
       store.entries = [
-        { id: '1', service: 'A', username: 'admin@test.com', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
-        { id: '2', service: 'B', username: 'user@test.com', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'A', username: 'admin@test.com', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
+        { id: '2', service: 'B', username: 'user@test.com', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
       store.searchQuery = 'admin'
       expect(store.filteredEntries).toHaveLength(1)
@@ -275,7 +285,7 @@ describe('Vault Store', () => {
     it('should be case-insensitive', () => {
       const store = useVaultStore()
       store.entries = [
-        { id: '1', service: 'GitHub', username: 'u', password: 'p', url: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '1', service: 'GitHub', username: 'u', password: 'p', url: '', notes: '', favorite: false, passwordHistory: [], createdAt: '', updatedAt: '' },
       ]
       store.searchQuery = 'GITHUB'
       expect(store.filteredEntries).toHaveLength(1)

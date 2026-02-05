@@ -3,8 +3,9 @@
     <!-- Animated background -->
     <div class="bg-gradient"></div>
     <div class="bg-pattern"></div>
+    <div class="bg-glow"></div>
 
-    <div class="lock-container">
+    <div class="lock-container" :class="{ 'animate-in': animateIn }">
       <!-- Logo -->
       <div class="lock-logo">
         <div class="logo-icon">
@@ -36,77 +37,83 @@
       </div>
 
       <!-- Unlock form -->
-      <div v-if="mode === 'unlock'" class="form-section">
-        <div class="input-group" :class="{ focused: pwdFocused, error: unlockError }">
-          <v-icon class="input-icon" size="16">mdi-key</v-icon>
-          <input
-            v-model="password"
-            :type="showPwd ? 'text' : 'password'"
-            placeholder="Master Password"
-            class="custom-input"
-            @focus="pwdFocused = true; unlockError = false"
-            @blur="pwdFocused = false"
-            @keyup.enter="handleUnlock"
-          />
-          <button class="toggle-btn" @click="showPwd = !showPwd" tabindex="-1">
-            <v-icon size="16">{{ showPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-          </button>
-        </div>
-        <p v-if="unlockError" class="error-text">{{ errorMessage }}</p>
-        <button class="primary-btn" :disabled="loading || !password" @click="handleUnlock">
-          <span v-if="!loading">Unlock Vault</span>
-          <v-progress-circular v-else indeterminate size="18" width="2" />
-        </button>
-      </div>
-
-      <!-- Create form -->
-      <div v-else class="form-section">
-        <div class="input-group" :class="{ focused: pwdFocused }">
-          <v-icon class="input-icon" size="16">mdi-key</v-icon>
-          <input
-            v-model="password"
-            :type="showPwd ? 'text' : 'password'"
-            placeholder="Master Password"
-            class="custom-input"
-            @focus="pwdFocused = true"
-            @blur="pwdFocused = false"
-          />
-          <button class="toggle-btn" @click="showPwd = !showPwd" tabindex="-1">
-            <v-icon size="16">{{ showPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-          </button>
-        </div>
-
-        <!-- Password strength -->
-        <div v-if="password" class="strength-indicator">
-          <div class="strength-bars">
-            <div :class="['bar', { active: passwordStrength >= 1 }]"></div>
-            <div :class="['bar', { active: passwordStrength >= 2 }]"></div>
-            <div :class="['bar', { active: passwordStrength >= 3 }]"></div>
-            <div :class="['bar', { active: passwordStrength >= 4 }]"></div>
+      <transition name="form-switch" mode="out-in">
+        <div v-if="mode === 'unlock'" key="unlock" class="form-section">
+          <div class="input-group" :class="{ focused: pwdFocused, error: unlockError }">
+            <v-icon class="input-icon" size="16">mdi-key</v-icon>
+            <input
+              v-model="password"
+              :type="showPwd ? 'text' : 'password'"
+              placeholder="Master Password"
+              class="custom-input"
+              @focus="pwdFocused = true; unlockError = false"
+              @blur="pwdFocused = false"
+              @keyup.enter="handleUnlock"
+            />
+            <button class="toggle-btn" @click="showPwd = !showPwd" tabindex="-1">
+              <v-icon size="16">{{ showPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+            </button>
           </div>
-          <span class="strength-text">{{ strengthText }}</span>
-        </div>
-
-        <div class="input-group" :class="{ focused: confirmFocused }">
-          <v-icon class="input-icon" size="16">mdi-key-check</v-icon>
-          <input
-            v-model="confirm"
-            :type="showConfirm ? 'text' : 'password'"
-            placeholder="Confirm Password"
-            class="custom-input"
-            @focus="confirmFocused = true"
-            @blur="confirmFocused = false"
-            @keyup.enter="handleCreate"
-          />
-          <button class="toggle-btn" @click="showConfirm = !showConfirm" tabindex="-1">
-            <v-icon size="16">{{ showConfirm ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+          <transition name="error-slide">
+            <p v-if="unlockError" class="error-text">{{ errorMessage }}</p>
+          </transition>
+          <button class="primary-btn" :disabled="loading || !password" @click="handleUnlock">
+            <span v-if="!loading">Unlock Vault</span>
+            <v-progress-circular v-else indeterminate size="18" width="2" />
           </button>
         </div>
-        <button class="primary-btn" :disabled="loading || !password || !confirm" @click="handleCreate">
-          <span v-if="!loading">Create Vault</span>
-          <v-progress-circular v-else indeterminate size="18" width="2" />
-        </button>
-      </div>
+
+        <!-- Create form -->
+        <div v-else key="create" class="form-section">
+          <div class="input-group" :class="{ focused: pwdFocused }">
+            <v-icon class="input-icon" size="16">mdi-key</v-icon>
+            <input
+              v-model="password"
+              :type="showPwd ? 'text' : 'password'"
+              placeholder="Master Password"
+              class="custom-input"
+              @focus="pwdFocused = true"
+              @blur="pwdFocused = false"
+            />
+            <button class="toggle-btn" @click="showPwd = !showPwd" tabindex="-1">
+              <v-icon size="16">{{ showPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+            </button>
+          </div>
+
+          <!-- Password strength -->
+          <transition name="strength-fade">
+            <div v-if="password" class="strength-indicator">
+              <div class="strength-bars">
+                <div :class="['bar', { active: passwordStrength >= 1 }]"></div>
+                <div :class="['bar', { active: passwordStrength >= 2 }]"></div>
+                <div :class="['bar', { active: passwordStrength >= 3 }]"></div>
+                <div :class="['bar', { active: passwordStrength >= 4 }]"></div>
+              </div>
+              <span class="strength-text">{{ strengthText }}</span>
+            </div>
+          </transition>
+
+          <div class="input-group" :class="{ focused: confirmFocused }">
+            <v-icon class="input-icon" size="16">mdi-key-check</v-icon>
+            <input
+              v-model="confirm"
+              :type="showConfirm ? 'text' : 'password'"
+              placeholder="Confirm Password"
+              class="custom-input"
+              @focus="confirmFocused = true"
+              @blur="confirmFocused = false"
+              @keyup.enter="handleCreate"
+            />
+            <button class="toggle-btn" @click="showConfirm = !showConfirm" tabindex="-1">
+              <v-icon size="16">{{ showConfirm ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+            </button>
+          </div>
+          <button class="primary-btn" :disabled="loading || !password || !confirm" @click="handleCreate">
+            <span v-if="!loading">Create Vault</span>
+            <v-progress-circular v-else indeterminate size="18" width="2" />
+          </button>
+        </div>
+      </transition>
 
       <!-- Security info -->
       <div class="security-footer">
@@ -127,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useVaultStore } from '@/stores/passwordManager'
 import { useRouter } from 'vue-router'
 
@@ -144,6 +151,14 @@ const pwdFocused = ref(false)
 const confirmFocused = ref(false)
 const unlockError = ref(false)
 const errorMessage = ref('')
+const animateIn = ref(false)
+
+// Trigger entrance animation
+onMounted(() => {
+  requestAnimationFrame(() => {
+    animateIn.value = true
+  })
+})
 
 const passwordStrength = computed(() => {
   const p = password.value
@@ -209,6 +224,12 @@ async function handleCreate() {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(68, 52, 188, 0.15) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 80%, rgba(108, 92, 231, 0.08) 0%, transparent 40%);
+  animation: gradient-pulse 8s ease-in-out infinite;
+}
+
+@keyframes gradient-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .bg-pattern {
@@ -218,6 +239,23 @@ async function handleCreate() {
   opacity: 0.5;
 }
 
+.bg-glow {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  background: radial-gradient(circle, rgba(68, 52, 188, 0.2) 0%, transparent 70%);
+  filter: blur(40px);
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { transform: translate(-50%, -60%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -60%) scale(1.1); opacity: 0.8; }
+}
+
 .lock-container {
   width: 100%;
   max-width: 280px;
@@ -225,6 +263,14 @@ async function handleCreate() {
   position: relative;
   z-index: 1;
   -webkit-app-region: no-drag;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lock-container.animate-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .lock-logo {
@@ -244,6 +290,12 @@ async function handleCreate() {
   box-shadow:
     0 8px 24px rgba(68, 52, 188, 0.35),
     0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  animation: logo-float 3s ease-in-out infinite;
+}
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .app-title {
@@ -301,7 +353,7 @@ async function handleCreate() {
   height: calc(100% - 6px);
   background: rgba(68, 52, 188, 0.35);
   border-radius: 8px;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mode-indicator.right {
@@ -314,6 +366,45 @@ async function handleCreate() {
   gap: 10px;
 }
 
+/* Form switch transitions */
+.form-switch-enter-active,
+.form-switch-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-switch-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.form-switch-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* Error slide transition */
+.error-slide-enter-active,
+.error-slide-leave-active {
+  transition: all 0.2s ease;
+}
+
+.error-slide-enter-from,
+.error-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Strength fade transition */
+.strength-fade-enter-active,
+.strength-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.strength-fade-enter-from,
+.strength-fade-leave-to {
+  opacity: 0;
+}
+
 .input-group {
   display: flex;
   align-items: center;
@@ -321,7 +412,7 @@ async function handleCreate() {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
   padding: 0 12px;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input-group.focused {
@@ -333,11 +424,23 @@ async function handleCreate() {
 .input-group.error {
   border-color: rgba(231, 76, 60, 0.5);
   background: rgba(231, 76, 60, 0.05);
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
 }
 
 .input-icon {
   color: rgba(255, 255, 255, 0.25);
   margin-right: 8px;
+  transition: color 0.2s;
+}
+
+.input-group.focused .input-icon {
+  color: rgba(68, 52, 188, 0.7);
 }
 
 .custom-input {
@@ -393,7 +496,7 @@ async function handleCreate() {
   height: 3px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
-  transition: background 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .strength-bars .bar.active:nth-child(1) { background: #e74c3c; }
@@ -422,17 +525,18 @@ async function handleCreate() {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 16px rgba(68, 52, 188, 0.3);
 }
 
 .primary-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(68, 52, 188, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(68, 52, 188, 0.4);
 }
 
 .primary-btn:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(68, 52, 188, 0.3);
 }
 
 .primary-btn:disabled {

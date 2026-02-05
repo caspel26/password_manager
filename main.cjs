@@ -5,6 +5,8 @@ const crypto = require('crypto')
 const fs = require('fs')
 
 let win
+let autoLockTimer = null
+const AUTO_LOCK_MINUTES = 5 // Lock after 5 minutes of inactivity
 
 // ── State ───────────────────────────────────────────────────────
 
@@ -13,6 +15,28 @@ let state = {
   vaultPath: null,             // path to the .vault file
   entries: [],                 // decrypted entries in memory
   unlocked: false,
+  settings: {
+    autoLockMinutes: AUTO_LOCK_MINUTES,
+    autoLockEnabled: true,
+  },
+}
+
+// ── Auto-lock ───────────────────────────────────────────────────
+
+function resetAutoLockTimer() {
+  if (autoLockTimer) clearTimeout(autoLockTimer)
+  if (!state.unlocked || !state.settings.autoLockEnabled) return
+
+  autoLockTimer = setTimeout(() => {
+    if (state.unlocked && win) {
+      // Lock the vault
+      state.derivedKey = null
+      state.entries = []
+      state.unlocked = false
+      // Notify renderer
+      win.webContents.send('vault:auto-locked')
+    }
+  }, state.settings.autoLockMinutes * 60 * 1000)
 }
 
 // ── AES-256-GCM symmetric encryption ───────────────────────────
@@ -30,7 +54,6 @@ function encrypt(plaintext, key) {
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf-8'), cipher.final()])
   const tag = cipher.getAuthTag()
-  // format: iv:tag:ciphertext (all base64)
   return [
     iv.toString('base64'),
     tag.toString('base64'),
@@ -49,13 +72,18 @@ function decrypt(packed, key) {
 }
 
 // ── Vault file format ───────────────────────────────────────────
-// JSON file: { salt: base64, verify: encrypted("__vault_ok__"), entries: [encrypted(json), ...] }
+// JSON: { salt, verify, entries[], settings? }
 
 function createVault(password, vaultPath) {
   const salt = crypto.randomBytes(SALT_LEN)
   const key = deriveKey(password, salt)
   const verify = encrypt('__vault_ok__', key)
-  const vault = { salt: salt.toString('base64'), verify, entries: [] }
+  const vault = {
+    salt: salt.toString('base64'),
+    verify,
+    entries: [],
+    settings: { autoLockMinutes: AUTO_LOCK_MINUTES, autoLockEnabled: true },
+  }
   fs.writeFileSync(vaultPath, JSON.stringify(vault, null, 2), 'utf-8')
   return { key, salt }
 }
@@ -65,12 +93,11 @@ function loadVault(password, vaultPath) {
   const vault = JSON.parse(raw)
   const salt = Buffer.from(vault.salt, 'base64')
   const key = deriveKey(password, salt)
-  // verify master password
   const check = decrypt(vault.verify, key)
   if (check !== '__vault_ok__') throw new Error('Invalid master password')
-  // decrypt all entries
   const entries = vault.entries.map((enc) => JSON.parse(decrypt(enc, key)))
-  return { key, salt, entries }
+  const settings = vault.settings || { autoLockMinutes: AUTO_LOCK_MINUTES, autoLockEnabled: true }
+  return { key, salt, entries, settings }
 }
 
 function saveVault() {
@@ -79,9 +106,9 @@ function saveVault() {
   }
   const raw = fs.readFileSync(state.vaultPath, 'utf-8')
   const vault = JSON.parse(raw)
-  // backup before writing
   fs.copyFileSync(state.vaultPath, state.vaultPath + '.bak')
   vault.entries = state.entries.map((e) => encrypt(JSON.stringify(e), state.derivedKey))
+  vault.settings = state.settings
   fs.writeFileSync(state.vaultPath, JSON.stringify(vault, null, 2), 'utf-8')
 }
 
@@ -141,6 +168,8 @@ ipcMain.handle('vault:create', async (_event, { password }) => {
     state.vaultPath = filePath
     state.entries = []
     state.unlocked = true
+    state.settings = { autoLockMinutes: AUTO_LOCK_MINUTES, autoLockEnabled: true }
+    resetAutoLockTimer()
     return { success: true, vaultName: path.basename(filePath) }
   } catch (e) {
     return { success: false, error: e.message }
@@ -155,12 +184,14 @@ ipcMain.handle('vault:unlock', async (_event, { password }) => {
       properties: ['openFile'],
     })
     if (!filePaths || filePaths.length === 0) return { success: false, error: 'Cancelled' }
-    const { key, entries } = loadVault(password, filePaths[0])
+    const { key, entries, settings } = loadVault(password, filePaths[0])
     state.derivedKey = key
     state.vaultPath = filePaths[0]
     state.entries = entries
     state.unlocked = true
-    return { success: true, vaultName: path.basename(filePaths[0]), entries }
+    state.settings = settings
+    resetAutoLockTimer()
+    return { success: true, vaultName: path.basename(filePaths[0]), entries, settings }
   } catch (e) {
     const msg = e.message.includes('Unsupported state') ? 'Invalid master password' : e.message
     return { success: false, error: msg }
@@ -168,6 +199,7 @@ ipcMain.handle('vault:unlock', async (_event, { password }) => {
 })
 
 ipcMain.handle('vault:lock', async () => {
+  if (autoLockTimer) clearTimeout(autoLockTimer)
   state.derivedKey = null
   state.entries = []
   state.unlocked = false
@@ -175,12 +207,14 @@ ipcMain.handle('vault:lock', async () => {
 })
 
 ipcMain.handle('vault:getEntries', async () => {
+  resetAutoLockTimer()
   return { success: true, entries: state.entries }
 })
 
-ipcMain.handle('vault:addEntry', async (_event, { service, username, password, url, notes }) => {
+ipcMain.handle('vault:addEntry', async (_event, { service, username, password, url, notes, favorite }) => {
   try {
     if (!state.unlocked) return { success: false, error: 'Vault is locked' }
+    resetAutoLockTimer()
     const entry = {
       id: crypto.randomUUID(),
       service,
@@ -188,6 +222,8 @@ ipcMain.handle('vault:addEntry', async (_event, { service, username, password, u
       password,
       url: url || '',
       notes: notes || '',
+      favorite: favorite || false,
+      passwordHistory: [], // Store previous passwords
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -199,20 +235,51 @@ ipcMain.handle('vault:addEntry', async (_event, { service, username, password, u
   }
 })
 
-ipcMain.handle('vault:updateEntry', async (_event, { id, service, username, password, url, notes }) => {
+ipcMain.handle('vault:updateEntry', async (_event, { id, service, username, password, url, notes, favorite }) => {
   try {
     if (!state.unlocked) return { success: false, error: 'Vault is locked' }
+    resetAutoLockTimer()
     const idx = state.entries.findIndex((e) => e.id === id)
     if (idx === -1) return { success: false, error: 'Entry not found' }
+
+    const oldEntry = state.entries[idx]
+    const passwordHistory = oldEntry.passwordHistory || []
+
+    // If password changed, save old one to history (keep last 5)
+    if (oldEntry.password !== password) {
+      passwordHistory.unshift({
+        password: oldEntry.password,
+        changedAt: new Date().toISOString(),
+      })
+      if (passwordHistory.length > 5) passwordHistory.pop()
+    }
+
     state.entries[idx] = {
-      ...state.entries[idx],
+      ...oldEntry,
       service,
       username,
       password,
       url: url || '',
       notes: notes || '',
+      favorite: favorite !== undefined ? favorite : oldEntry.favorite,
+      passwordHistory,
       updatedAt: new Date().toISOString(),
     }
+    saveVault()
+    return { success: true, entry: state.entries[idx] }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vault:toggleFavorite', async (_event, { id }) => {
+  try {
+    if (!state.unlocked) return { success: false, error: 'Vault is locked' }
+    resetAutoLockTimer()
+    const idx = state.entries.findIndex((e) => e.id === id)
+    if (idx === -1) return { success: false, error: 'Entry not found' }
+    state.entries[idx].favorite = !state.entries[idx].favorite
+    state.entries[idx].updatedAt = new Date().toISOString()
     saveVault()
     return { success: true, entry: state.entries[idx] }
   } catch (e) {
@@ -223,6 +290,7 @@ ipcMain.handle('vault:updateEntry', async (_event, { id, service, username, pass
 ipcMain.handle('vault:deleteEntry', async (_event, { id }) => {
   try {
     if (!state.unlocked) return { success: false, error: 'Vault is locked' }
+    resetAutoLockTimer()
     const len = state.entries.length
     state.entries = state.entries.filter((e) => e.id !== id)
     if (state.entries.length === len) return { success: false, error: 'Entry not found' }
@@ -235,6 +303,7 @@ ipcMain.handle('vault:deleteEntry', async (_event, { id }) => {
 
 ipcMain.handle('vault:generatePassword', async (_event, { length }) => {
   try {
+    resetAutoLockTimer()
     return { success: true, password: generatePassword(length || 24) }
   } catch (e) {
     return { success: false, error: e.message }
@@ -249,13 +318,38 @@ ipcMain.handle('vault:isUnlocked', async () => {
   }
 })
 
+ipcMain.handle('vault:updateSettings', async (_event, { autoLockMinutes, autoLockEnabled }) => {
+  try {
+    if (!state.unlocked) return { success: false, error: 'Vault is locked' }
+    state.settings = {
+      ...state.settings,
+      autoLockMinutes: autoLockMinutes ?? state.settings.autoLockMinutes,
+      autoLockEnabled: autoLockEnabled ?? state.settings.autoLockEnabled,
+    }
+    saveVault()
+    resetAutoLockTimer()
+    return { success: true, settings: state.settings }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vault:getSettings', async () => {
+  return { success: true, settings: state.settings }
+})
+
+// Activity tracking for auto-lock
+ipcMain.handle('vault:activity', async () => {
+  resetAutoLockTimer()
+  return { success: true }
+})
+
 // ── Window ──────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
-  // Compact window positioned in the bottom-right corner
   const winWidth = 380
   const winHeight = 580
   const margin = 24
@@ -288,6 +382,7 @@ app.whenReady().then(() => {
     win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
 
+  // Register keyboard shortcuts
   const template = [
     ...(process.platform === 'darwin' ? [{
       label: app.name,
@@ -302,6 +397,23 @@ app.whenReady().then(() => {
       ],
     }] : []),
     {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Entry',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => win.webContents.send('shortcut:new-entry'),
+        },
+        {
+          label: 'Lock Vault',
+          accelerator: 'CmdOrCtrl+L',
+          click: () => win.webContents.send('shortcut:lock'),
+        },
+        { type: 'separator' },
+        { role: 'close' },
+      ],
+    },
+    {
       label: 'Edit',
       submenu: [
         { role: 'undo' },
@@ -311,6 +423,25 @@ app.whenReady().then(() => {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Find',
+          accelerator: 'CmdOrCtrl+F',
+          click: () => win.webContents.send('shortcut:search'),
+        },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Generator',
+          accelerator: 'CmdOrCtrl+G',
+          click: () => win.webContents.send('shortcut:generator'),
+        },
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'toggleDevTools' },
       ],
     },
   ]
@@ -318,5 +449,10 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  if (autoLockTimer) clearTimeout(autoLockTimer)
   if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('will-quit', () => {
+  if (autoLockTimer) clearTimeout(autoLockTimer)
 })
