@@ -253,17 +253,28 @@ ipcMain.handle('vault:isUnlocked', async () => {
 
 app.whenReady().then(() => {
   const primaryDisplay = screen.getPrimaryDisplay()
-  const { width, height } = primaryDisplay.workAreaSize
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
+
+  // Compact window positioned in the bottom-right corner
+  const winWidth = 380
+  const winHeight = 580
+  const margin = 24
 
   win = new BrowserWindow({
-    width: 960,
-    height: 680,
-    minWidth: 800,
-    minHeight: 600,
-    x: Math.round((width - 960) / 2),
-    y: Math.round((height - 680) / 2),
+    width: winWidth,
+    height: winHeight,
+    minWidth: 340,
+    minHeight: 480,
+    maxWidth: 480,
+    x: screenWidth - winWidth - margin,
+    y: screenHeight - winHeight - margin,
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
+    trafficLightPosition: { x: 12, y: 12 },
+    vibrancy: 'under-window',
+    visualEffectState: 'active',
+    backgroundColor: '#00000000',
+    transparent: process.platform === 'darwin',
+    roundedCorners: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
