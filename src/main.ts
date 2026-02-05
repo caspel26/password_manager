@@ -12,3 +12,6 @@ app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
+
+// Signal that Vue app is ready - hides the initial HTML splash
+window.dispatchEvent(new CustomEvent('vue-app-mounted'))

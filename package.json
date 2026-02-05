@@ -17,7 +17,8 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate-icons": "node scripts/generate-icon.js"
   },
   "main": "main.cjs",
   "dependencies": {
@@ -30,24 +31,53 @@
     "appId": "com.vault.passwordmanager",
     "productName": "Vault",
     "directories": {
-      "output": "dist"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "main.cjs",
-      "preload.cjs"
+      "preload.cjs",
+      "package.json"
     ],
+    "extraMetadata": {
+      "main": "main.cjs"
+    },
+    "asar": true,
     "mac": {
       "category": "public.app-category.utilities",
-      "target": ["dmg", "zip"],
-      "icon": "build/icon.icns"
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "win": {
-      "target": ["nsis"],
-      "icon": "build/icon.ico"
+      "target": [
+        "nsis"
+      ]
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Utility"
     },
     "nsis": {
@@ -71,6 +101,7 @@
     "happy-dom": "^17.6.3",
     "jiti": "^2.4.2",
     "npm-run-all2": "^7.0.2",
+    "sharp": "^0.34.5",
     "typescript": "~5.7.3",
     "vite": "^6.1.0",
     "vite-plugin-vue-devtools": "^7.7.2",

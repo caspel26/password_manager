@@ -298,7 +298,7 @@ describe('Vault Store', () => {
     it('should update snackbar state', () => {
       const store = useVaultStore()
       store.notify('Test', 'warning')
-      expect(store.snackbar).toEqual({ show: true, message: 'Test', color: 'warning' })
+      expect(store.snackbar).toEqual({ show: true, message: 'Test', color: 'warning', action: null })
     })
 
     it('should default to success', () => {

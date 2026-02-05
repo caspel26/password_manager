@@ -2,13 +2,19 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useVaultStore } from '@/stores/passwordManager'
+import SplashScreen from '@/components/SplashScreen.vue'
 
 const store = useVaultStore()
 const route = useRoute()
 const router = useRouter()
 
+const showSplash = ref(true)
 const isLocked = computed(() => route.path === '/' || route.path === '/lock')
 const currentPath = computed(() => route.path)
+
+function onSplashComplete() {
+  showSplash.value = false
+}
 
 // Track transition direction based on nav index
 const transitionName = ref('slide-left')
@@ -47,6 +53,13 @@ async function handleLock() {
   router.push('/')
 }
 
+function handleUndo() {
+  if (store.snackbar.action) {
+    store.snackbar.action()
+    store.snackbar.show = false
+  }
+}
+
 // Handle keyboard shortcuts and auto-lock
 onMounted(() => {
   window.electronAPI.onShortcutLock(() => {
@@ -81,6 +94,9 @@ onUnmounted(() => {
 
 <template>
   <v-app>
+    <!-- Splash Screen -->
+    <SplashScreen v-if="showSplash" @complete="onSplashComplete" />
+
     <v-main class="app-main">
       <router-view v-slot="{ Component }">
         <transition :name="transitionName" mode="out-in">
@@ -116,12 +132,16 @@ onUnmounted(() => {
     <v-snackbar
       v-model="store.snackbar.show"
       :color="store.snackbar.color"
-      :timeout="1500"
+      :timeout="store.snackbar.action ? 4000 : 1500"
       location="top"
-      rounded="pill"
+      :rounded="store.snackbar.action ? 'lg' : 'pill'"
       class="custom-snackbar"
+      :class="{ 'has-action': store.snackbar.action }"
     >
-      {{ store.snackbar.message }}
+      <span>{{ store.snackbar.message }}</span>
+      <template v-if="store.snackbar.action" #actions>
+        <button class="undo-btn" @click="handleUndo">Undo</button>
+      </template>
     </v-snackbar>
   </v-app>
 </template>
@@ -158,6 +178,30 @@ html, body, #app {
 .custom-snackbar .v-snackbar__content {
   font-size: 12px !important;
   padding: 8px 16px !important;
+}
+.custom-snackbar.has-action .v-snackbar__wrapper {
+  min-width: 200px !important;
+}
+.custom-snackbar.has-action .v-snackbar__content {
+  padding: 10px 12px !important;
+}
+.custom-snackbar .v-snackbar__actions {
+  margin-inline-end: 0 !important;
+}
+.undo-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 8px;
+}
+.undo-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Page Transitions */

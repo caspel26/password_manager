@@ -354,6 +354,12 @@ app.whenReady().then(() => {
   const winHeight = 580
   const margin = 24
 
+  // Set app icon for dev mode (dock icon on macOS)
+  const iconPath = path.join(__dirname, 'build', 'icon.png')
+  if (process.platform === 'darwin' && !app.isPackaged) {
+    app.dock.setIcon(iconPath)
+  }
+
   win = new BrowserWindow({
     width: winWidth,
     height: winHeight,
@@ -362,6 +368,7 @@ app.whenReady().then(() => {
     maxWidth: 480,
     x: screenWidth - winWidth - margin,
     y: screenHeight - winHeight - margin,
+    icon: iconPath,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     vibrancy: 'under-window',

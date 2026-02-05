@@ -9,11 +9,12 @@ export const useVaultStore = defineStore('vault', () => {
   const entries = ref<VaultEntry[]>([])
   const searchQuery = ref('')
   const generatedPassword = ref<string | null>(null)
-  const snackbar = ref({ show: false, message: '', color: 'success' })
+  const snackbar = ref({ show: false, message: '', color: 'success', action: null as (() => void) | null })
   const settings = ref<VaultSettings>({
     autoLockMinutes: 5,
     autoLockEnabled: true,
   })
+  const lastDeletedEntry = ref<VaultEntry | null>(null)
 
   // ── Computed ───────────────────────────────────────────────
   const filteredEntries = computed(() => {
@@ -39,8 +40,8 @@ export const useVaultStore = defineStore('vault', () => {
   const favoriteCount = computed(() => entries.value.filter((e) => e.favorite).length)
 
   // ── Helpers ────────────────────────────────────────────────
-  function notify(message: string, color: 'success' | 'error' | 'warning' | 'info' = 'success') {
-    snackbar.value = { show: true, message, color }
+  function notify(message: string, color: 'success' | 'error' | 'warning' | 'info' = 'success', action: (() => void) | null = null) {
+    snackbar.value = { show: true, message, color, action }
   }
 
   function trackActivity() {
@@ -118,10 +119,34 @@ export const useVaultStore = defineStore('vault', () => {
 
   async function deleteEntry(id: string) {
     trackActivity()
+    // Store entry before deleting for potential undo
+    const entryToDelete = entries.value.find((e) => e.id === id)
     const res = await window.electronAPI.deleteEntry(id)
     if (!res.success) { notify(res.error || 'Failed to delete', 'error'); return false }
     entries.value = entries.value.filter((e) => e.id !== id)
-    notify('Entry deleted')
+    if (entryToDelete) {
+      lastDeletedEntry.value = entryToDelete
+      notify('Entry deleted', 'info', () => restoreEntry())
+    }
+    return true
+  }
+
+  async function restoreEntry() {
+    if (!lastDeletedEntry.value) return false
+    const entry = lastDeletedEntry.value
+    trackActivity()
+    const res = await window.electronAPI.addEntry({
+      service: entry.service,
+      username: entry.username,
+      password: entry.password,
+      url: entry.url,
+      notes: entry.notes,
+      favorite: entry.favorite,
+    })
+    if (!res.success) { notify(res.error || 'Failed to restore', 'error'); return false }
+    if (res.entry) entries.value.push(res.entry)
+    lastDeletedEntry.value = null
+    notify('Entry restored')
     return true
   }
 
@@ -161,6 +186,7 @@ export const useVaultStore = defineStore('vault', () => {
     generatedPassword,
     snackbar,
     settings,
+    lastDeletedEntry,
     filteredEntries,
     entryCount,
     favoriteCount,
@@ -172,6 +198,7 @@ export const useVaultStore = defineStore('vault', () => {
     addEntry,
     updateEntry,
     deleteEntry,
+    restoreEntry,
     toggleFavorite,
     updateSettings,
     generatePassword,
