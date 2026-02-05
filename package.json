@@ -1,0 +1,112 @@
+{
+  "name": "vault",
+  "productName": "Vault",
+  "version": "1.0.1",
+  "description": "A secure, offline password manager",
+  "author": "Your Name",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vue\" \"npm run dev:electron\"",
+    "dev:vue": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
+    "electron": "electron .",
+    "build": "vite build && electron-builder",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build",
+    "lint": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-icons": "node scripts/generate-icon.js"
+  },
+  "main": "main.cjs",
+  "dependencies": {
+    "pinia": "^3.0.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vuetify": "^3.7.13"
+  },
+  "build": {
+    "appId": "com.vault.passwordmanager",
+    "productName": "Vault",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "main.cjs"
+    },
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "@electron/remote": "^2.1.2",
+    "@mdi/font": "^7.4.47",
+    "@tsconfig/node22": "^22.0.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-typescript": "^14.4.0",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.7.0",
+    "concurrently": "^9.1.2",
+    "electron": "^34.5.8",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.20.1",
+    "eslint-plugin-vue": "^9.32.0",
+    "happy-dom": "^17.6.3",
+    "jiti": "^2.4.2",
+    "npm-run-all2": "^7.0.2",
+    "sharp": "^0.34.5",
+    "typescript": "~5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^2.2.2",
+    "wait-on": "^8.0.2"
+  }
+}

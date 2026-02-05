@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vault</title>
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <style>
+      /* Initial splash screen - shows before Vue loads */
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0a0a0f;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      }
+
+      #initial-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0f;
+        transition: opacity 0.3s ease;
+      }
+
+      #initial-splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .initial-bg {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(ellipse at 50% 0%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 50%, rgba(118, 75, 162, 0.1) 0%, transparent 40%),
+          radial-gradient(ellipse at 20% 80%, rgba(102, 126, 234, 0.08) 0%, transparent 40%);
+      }
+
+      .initial-content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .initial-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4); }
+        50% { box-shadow: 0 8px 48px rgba(102, 126, 234, 0.6); }
+      }
+
+      .initial-logo svg {
+        width: 32px;
+        height: 32px;
+      }
+
+      .initial-text {
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Initial splash shown immediately before Vue loads -->
+    <div id="initial-splash">
+      <div class="initial-bg"></div>
+      <div class="initial-content">
+        <div class="initial-logo">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 11V20C6 21.103 6.897 22 8 22H16C17.103 22 18 21.103 18 20V11C18 9.897 17.103 9 16 9H8C6.897 9 6 9.897 6 11Z" fill="white"/>
+            <path d="M8 9V7C8 4.791 9.791 3 12 3C14.209 3 16 4.791 16 7V9" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="15" r="1.5" fill="#0a0a0f"/>
+            <rect x="11.25" y="15" width="1.5" height="3" rx="0.75" fill="#0a0a0f"/>
+          </svg>
+        </div>
+        <div class="initial-text">Vault</div>
+      </div>
+    </div>
+
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+    <script>
+      // Hide initial splash when Vue app is ready
+      window.addEventListener('vue-app-mounted', () => {
+        const splash = document.getElementById('initial-splash');
+        if (splash) {
+          splash.classList.add('hidden');
+          setTimeout(() => splash.remove(), 300);
+        }
+      });
+    </script>
+  </body>
+</html>
