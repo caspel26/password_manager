@@ -74,7 +74,9 @@ function loadVault(password, vaultPath) {
 }
 
 function saveVault() {
-  if (!state.vaultPath || !state.derivedKey) return
+  if (!state.vaultPath || !state.derivedKey) {
+    throw new Error('Cannot save: vault is not open')
+  }
   const raw = fs.readFileSync(state.vaultPath, 'utf-8')
   const vault = JSON.parse(raw)
   // backup before writing
@@ -275,7 +277,33 @@ app.whenReady().then(() => {
     win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
 
-  Menu.setApplicationMenu(null)
+  const template = [
+    ...(process.platform === 'darwin' ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    }] : []),
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 })
 
 app.on('window-all-closed', () => {

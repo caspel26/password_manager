@@ -249,27 +249,42 @@ function startEdit() {
 
 async function handleUpdate() {
   saving.value = true
-  const ok = await store.updateEntry(editForm.value)
-  saving.value = false
-  if (ok) {
-    selectedEntry.value = store.entries.find((e) => e.id === editForm.value.id) || null
-    editing.value = false
+  try {
+    const ok = await store.updateEntry(editForm.value)
+    if (ok) {
+      selectedEntry.value = store.entries.find((e) => e.id === editForm.value.id) || null
+      editing.value = false
+    }
+  } catch (e) {
+    store.notify('Failed to update entry', 'error')
+  } finally {
+    saving.value = false
   }
 }
 
 async function handleDelete() {
   if (!selectedEntry.value) return
   deleteLoading.value = true
-  const ok = await store.deleteEntry(selectedEntry.value.id)
-  deleteLoading.value = false
-  if (ok) showDetail.value = false
+  try {
+    const ok = await store.deleteEntry(selectedEntry.value.id)
+    if (ok) showDetail.value = false
+  } catch (e) {
+    store.notify('Failed to delete entry', 'error')
+  } finally {
+    deleteLoading.value = false
+  }
 }
 
 async function handleAdd() {
   saving.value = true
-  const ok = await store.addEntry(addForm.value)
-  saving.value = false
-  if (ok) closeAdd()
+  try {
+    const ok = await store.addEntry(addForm.value)
+    if (ok) closeAdd()
+  } catch (e) {
+    store.notify('Failed to save entry', 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
 function closeAdd() {

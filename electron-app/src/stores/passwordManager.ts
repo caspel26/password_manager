@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import type { VaultEntry } from '@/types/electron'
 
@@ -73,7 +73,7 @@ export const useVaultStore = defineStore('vault', () => {
       notify('Service, username, and password are required', 'error')
       return false
     }
-    const res = await window.electronAPI.addEntry(data)
+    const res = await window.electronAPI.addEntry({ ...toRaw(data) })
     if (!res.success) { notify(res.error || 'Failed to add entry', 'error'); return false }
     if (res.entry) entries.value.push(res.entry)
     notify('Entry saved')
@@ -87,7 +87,7 @@ export const useVaultStore = defineStore('vault', () => {
       notify('Service, username, and password are required', 'error')
       return false
     }
-    const res = await window.electronAPI.updateEntry(data)
+    const res = await window.electronAPI.updateEntry({ ...toRaw(data) })
     if (!res.success) { notify(res.error || 'Failed to update', 'error'); return false }
     const idx = entries.value.findIndex((e) => e.id === data.id)
     if (idx !== -1 && res.entry) entries.value[idx] = res.entry
