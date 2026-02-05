@@ -1,5 +1,12 @@
-# 🔒 Password Manager
-Python password manager which use rsa key to crypt password file.
+# 🔒 Password Manager (Python) — Deprecated
+
+> **⚠️ This Python implementation is deprecated.**
+> It has been replaced by a desktop Electron app with AES-256-GCM encryption, a modern UI, and improved security.
+> See [`electron-app/`](electron-app/) for the new version.
+
+---
+
+Python password manager which uses an RSA key to encrypt the password file.
 
 ## 📝 Instructions
 
