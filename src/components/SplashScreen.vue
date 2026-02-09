@@ -100,11 +100,13 @@ onMounted(() => {
   justify-content: center;
   background: #0a0a0f;
   transition: opacity 0.5s ease, transform 0.5s ease;
+  pointer-events: all;
 }
 
 .splash-screen.fade-out {
   opacity: 0;
   transform: scale(1.05);
+  pointer-events: none;
 }
 
 /* Background */

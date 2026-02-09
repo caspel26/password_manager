@@ -114,148 +114,153 @@
 
         <!-- View mode -->
         <transition name="fade" mode="out-in">
-          <div v-if="!editing" key="view" class="detail-body">
-            <div class="detail-hero">
-              <div class="detail-avatar" :style="{ background: getAvatarColor(selectedEntry.service) }">
-                {{ selectedEntry.service.charAt(0).toUpperCase() }}
-              </div>
-              <h2 class="detail-service">{{ selectedEntry.service }}</h2>
-            </div>
-
-            <div class="fields-section">
-              <div class="field-card">
-                <div class="field-row">
-                  <div class="field-icon">
-                    <v-icon size="14">mdi-account</v-icon>
-                  </div>
-                  <div class="field-content">
-                    <span class="field-label">Username</span>
-                    <span class="field-value">{{ selectedEntry.username }}</span>
-                  </div>
-                  <button class="field-btn" @click="copyText(selectedEntry.username)">
-                    <v-icon size="14">mdi-content-copy</v-icon>
-                  </button>
+          <div v-if="!editing" key="view" class="detail-content">
+            <div class="detail-body">
+              <div class="detail-hero">
+                <div class="detail-avatar" :style="{ background: getAvatarColor(selectedEntry.service) }">
+                  {{ selectedEntry.service.charAt(0).toUpperCase() }}
                 </div>
+                <h2 class="detail-service">{{ selectedEntry.service }}</h2>
               </div>
 
-              <div class="field-card">
-                <div class="field-row">
-                  <div class="field-icon">
-                    <v-icon size="14">mdi-key</v-icon>
-                  </div>
-                  <div class="field-content">
-                    <span class="field-label">Password</span>
-                    <code class="field-value mono">{{ showDetailPwd ? selectedEntry.password : '••••••••••••' }}</code>
-                  </div>
-                  <button class="field-btn" @click="showDetailPwd = !showDetailPwd">
-                    <v-icon size="14">{{ showDetailPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-                  </button>
-                  <button class="field-btn" @click="copyText(selectedEntry.password)">
-                    <v-icon size="14">mdi-content-copy</v-icon>
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="selectedEntry.url" class="field-card">
-                <div class="field-row">
-                  <div class="field-icon">
-                    <v-icon size="14">mdi-link</v-icon>
-                  </div>
-                  <div class="field-content">
-                    <span class="field-label">Website</span>
-                    <span class="field-value url">{{ selectedEntry.url }}</span>
-                  </div>
-                  <button class="field-btn" @click="copyText(selectedEntry.url)">
-                    <v-icon size="14">mdi-content-copy</v-icon>
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="selectedEntry.notes" class="field-card notes">
-                <div class="field-row">
-                  <div class="field-icon">
-                    <v-icon size="14">mdi-text</v-icon>
-                  </div>
-                  <div class="field-content">
-                    <span class="field-label">Notes</span>
-                    <p class="field-value notes-text">{{ selectedEntry.notes }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Password History -->
-            <div v-if="selectedEntry.passwordHistory?.length" class="history-section">
-              <button class="history-toggle" @click="showHistory = !showHistory">
-                <v-icon size="14">mdi-history</v-icon>
-                <span>Password History ({{ selectedEntry.passwordHistory.length }})</span>
-                <v-icon size="14" class="chevron" :class="{ open: showHistory }">mdi-chevron-down</v-icon>
-              </button>
-              <transition name="expand">
-                <div v-if="showHistory" class="history-list">
-                  <div v-for="(h, i) in selectedEntry.passwordHistory" :key="i" class="history-item">
-                    <code class="history-pwd">{{ showHistoryPwd[i] ? h.password : '••••••••' }}</code>
-                    <span class="history-date">{{ formatDate(h.changedAt) }}</span>
-                    <button class="field-btn sm" @click="showHistoryPwd[i] = !showHistoryPwd[i]">
-                      <v-icon size="12">{{ showHistoryPwd[i] ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-                    </button>
-                    <button class="field-btn sm" @click="copyText(h.password)">
-                      <v-icon size="12">mdi-content-copy</v-icon>
+              <div class="fields-section">
+                <div class="field-card">
+                  <div class="field-row">
+                    <div class="field-icon">
+                      <v-icon size="14">mdi-account</v-icon>
+                    </div>
+                    <div class="field-content">
+                      <span class="field-label">Username</span>
+                      <span class="field-value">{{ selectedEntry.username }}</span>
+                    </div>
+                    <button class="field-btn" @click="copyText(selectedEntry.username)">
+                      <v-icon size="14">mdi-content-copy</v-icon>
                     </button>
                   </div>
                 </div>
-              </transition>
+
+                <div class="field-card">
+                  <div class="field-row">
+                    <div class="field-icon">
+                      <v-icon size="14">mdi-key</v-icon>
+                    </div>
+                    <div class="field-content">
+                      <span class="field-label">Password</span>
+                      <code class="field-value mono">{{ showDetailPwd ? selectedEntry.password : '••••••••••••' }}</code>
+                    </div>
+                    <button class="field-btn" @click="showDetailPwd = !showDetailPwd">
+                      <v-icon size="14">{{ showDetailPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                    </button>
+                    <button class="field-btn" @click="copyText(selectedEntry.password)">
+                      <v-icon size="14">mdi-content-copy</v-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="selectedEntry.url" class="field-card">
+                  <div class="field-row">
+                    <div class="field-icon">
+                      <v-icon size="14">mdi-link</v-icon>
+                    </div>
+                    <div class="field-content">
+                      <span class="field-label">Website</span>
+                      <span class="field-value url">{{ selectedEntry.url }}</span>
+                    </div>
+                    <button class="field-btn" @click="copyText(selectedEntry.url)">
+                      <v-icon size="14">mdi-content-copy</v-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="selectedEntry.notes" class="field-card notes">
+                  <div class="field-row">
+                    <div class="field-icon">
+                      <v-icon size="14">mdi-text</v-icon>
+                    </div>
+                    <div class="field-content">
+                      <span class="field-label">Notes</span>
+                      <p class="field-value notes-text">{{ selectedEntry.notes }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Password History -->
+              <div v-if="selectedEntry.passwordHistory?.length" class="history-section">
+                <button class="history-toggle" @click="showHistory = !showHistory">
+                  <v-icon size="14">mdi-history</v-icon>
+                  <span>Password History ({{ selectedEntry.passwordHistory.length }})</span>
+                  <v-icon size="14" class="chevron" :class="{ open: showHistory }">mdi-chevron-down</v-icon>
+                </button>
+                <transition name="expand">
+                  <div v-if="showHistory" class="history-list">
+                    <div v-for="(h, i) in selectedEntry.passwordHistory" :key="i" class="history-item">
+                      <code class="history-pwd">{{ showHistoryPwd[i] ? h.password : '••••••••' }}</code>
+                      <span class="history-date">{{ formatDate(h.changedAt) }}</span>
+                      <button class="field-btn sm" @click="showHistoryPwd[i] = !showHistoryPwd[i]">
+                        <v-icon size="12">{{ showHistoryPwd[i] ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                      </button>
+                      <button class="field-btn sm" @click="copyText(h.password)">
+                        <v-icon size="12">mdi-content-copy</v-icon>
+                      </button>
+                    </div>
+                  </div>
+                </transition>
+              </div>
+
+              <div class="meta-row">
+                <v-icon size="12">mdi-clock-outline</v-icon>
+                <span>Last modified {{ formatDate(selectedEntry.updatedAt) }}</span>
+              </div>
             </div>
 
-            <div class="meta-row">
-              <v-icon size="12">mdi-clock-outline</v-icon>
-              <span>Last modified {{ formatDate(selectedEntry.updatedAt) }}</span>
-            </div>
-
-            <div class="detail-actions">
-              <button class="btn primary" @click="startEdit">
+            <div class="detail-footer">
+              <button class="btn primary flex-1" @click="startEdit">
                 <v-icon size="14">mdi-pencil</v-icon>
                 Edit
               </button>
               <button class="btn danger" :disabled="deleteLoading" @click="handleDelete">
                 <v-icon size="14">mdi-delete</v-icon>
+                Delete
               </button>
             </div>
           </div>
 
           <!-- Edit mode -->
-          <div v-else key="edit" class="detail-body">
-            <div class="edit-form">
-              <div class="form-field">
-                <label>Service Name</label>
-                <input v-model="editForm.service" type="text" placeholder="e.g., GitHub" />
-              </div>
-              <div class="form-field">
-                <label>Username / Email</label>
-                <input v-model="editForm.username" type="text" placeholder="user@example.com" />
-              </div>
-              <div class="form-field">
-                <label>Password</label>
-                <div class="input-group">
-                  <input v-model="editForm.password" :type="showEditPwd ? 'text' : 'password'" />
-                  <button class="input-btn" @click="showEditPwd = !showEditPwd">
-                    <v-icon size="14">{{ showEditPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-                  </button>
-                  <button class="input-btn accent" @click="fillGenerated(editForm)">
-                    <v-icon size="14">mdi-auto-fix</v-icon>
-                  </button>
+          <div v-else key="edit" class="detail-content">
+            <div class="detail-body">
+              <div class="edit-form">
+                <div class="form-field">
+                  <label>Service Name</label>
+                  <input v-model="editForm.service" type="text" placeholder="e.g., GitHub" />
+                </div>
+                <div class="form-field">
+                  <label>Username / Email</label>
+                  <input v-model="editForm.username" type="text" placeholder="user@example.com" />
+                </div>
+                <div class="form-field">
+                  <label>Password</label>
+                  <div class="input-group">
+                    <input v-model="editForm.password" :type="showEditPwd ? 'text' : 'password'" />
+                    <button class="input-btn" @click="showEditPwd = !showEditPwd">
+                      <v-icon size="14">{{ showEditPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                    </button>
+                    <button class="input-btn accent" @click="fillGenerated(editForm)">
+                      <v-icon size="14">mdi-auto-fix</v-icon>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <label>Website URL <span class="optional">(optional)</span></label>
+                  <input v-model="editForm.url" type="text" placeholder="https://..." />
+                </div>
+                <div class="form-field">
+                  <label>Notes <span class="optional">(optional)</span></label>
+                  <textarea v-model="editForm.notes" rows="3" placeholder="Additional information..."></textarea>
                 </div>
               </div>
-              <div class="form-field">
-                <label>Website URL <span class="optional">(optional)</span></label>
-                <input v-model="editForm.url" type="text" placeholder="https://..." />
-              </div>
-              <div class="form-field">
-                <label>Notes <span class="optional">(optional)</span></label>
-                <textarea v-model="editForm.notes" rows="3" placeholder="Additional information..."></textarea>
-              </div>
             </div>
-            <div class="detail-actions">
+            <div class="detail-footer">
               <button class="btn secondary" @click="editing = false">Cancel</button>
               <button class="btn primary flex-1" :disabled="saving" @click="handleUpdate">
                 {{ saving ? 'Saving...' : 'Save Changes' }}
@@ -267,8 +272,8 @@
     </v-navigation-drawer>
 
     <!-- Add dialog -->
-    <v-dialog v-model="showAdd" max-width="360" persistent>
-      <div class="add-dialog">
+    <v-dialog v-model="showAdd" max-width="360" persistent :scrim="true">
+      <div class="add-dialog" @click.stop>
         <div class="dialog-header">
           <div class="dialog-icon">
             <v-icon size="16" color="white">mdi-plus</v-icon>
@@ -281,7 +286,7 @@
         <div class="dialog-body">
           <div class="form-field">
             <label>Service Name</label>
-            <input v-model="addForm.service" type="text" placeholder="GitHub, Netflix, etc." />
+            <input v-model="addForm.service" type="text" placeholder="GitHub, Netflix, etc." autofocus />
           </div>
           <div class="form-field">
             <label>Username / Email</label>
@@ -291,10 +296,10 @@
             <label>Password</label>
             <div class="input-group">
               <input v-model="addForm.password" :type="showAddPwd ? 'text' : 'password'" placeholder="Enter or generate" />
-              <button class="input-btn" @click="showAddPwd = !showAddPwd">
+              <button type="button" class="input-btn" @click.stop="showAddPwd = !showAddPwd">
                 <v-icon size="14">{{ showAddPwd ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
               </button>
-              <button class="input-btn accent" @click="fillGenerated(addForm)">
+              <button type="button" class="input-btn accent" @click.stop="fillGenerated(addForm)">
                 <v-icon size="14">mdi-auto-fix</v-icon>
               </button>
             </div>
@@ -309,8 +314,8 @@
           </div>
         </div>
         <div class="dialog-footer">
-          <button class="btn secondary" @click="closeAdd">Cancel</button>
-          <button class="btn primary" :disabled="saving || !addForm.service || !addForm.username || !addForm.password" @click="handleAdd">
+          <button type="button" class="btn secondary" @click="closeAdd">Cancel</button>
+          <button type="button" class="btn primary" :disabled="saving || !addForm.service || !addForm.username || !addForm.password" @click="handleAdd">
             {{ saving ? 'Saving...' : 'Save Credential' }}
           </button>
         </div>
@@ -391,10 +396,13 @@ async function handleUpdate() {
 
 async function handleDelete() {
   if (!selectedEntry.value) return
+  const entryId = selectedEntry.value.id
+  // Close drawer first so user doesn't see stale state
+  showDetail.value = false
+  selectedEntry.value = null
   deleteLoading.value = true
   try {
-    const ok = await store.deleteEntry(selectedEntry.value.id)
-    if (ok) showDetail.value = false
+    await store.deleteEntry(entryId)
   } finally {
     deleteLoading.value = false
   }
@@ -1214,6 +1222,9 @@ defineExpose({ openNewEntry, focusSearch })
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
 }
 
 .dialog-header {
@@ -1265,6 +1276,8 @@ defineExpose({ openNewEntry, focusSearch })
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .dialog-footer {
@@ -1274,6 +1287,7 @@ defineExpose({ openNewEntry, focusSearch })
   padding: 12px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 /* Transitions */

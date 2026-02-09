@@ -132,13 +132,16 @@ onUnmounted(() => {
     <v-snackbar
       v-model="store.snackbar.show"
       :color="store.snackbar.color"
-      :timeout="store.snackbar.action ? 4000 : 1500"
-      location="top"
+      :timeout="store.snackbar.action ? 6000 : 1500"
+      location="bottom"
       :rounded="store.snackbar.action ? 'lg' : 'pill'"
       class="custom-snackbar"
-      :class="{ 'has-action': store.snackbar.action }"
+      :class="{ 'has-action': !!store.snackbar.action }"
     >
-      <span>{{ store.snackbar.message }}</span>
+      <div class="snackbar-inner">
+        <v-icon v-if="store.snackbar.action" size="16" class="snackbar-icon">mdi-delete-outline</v-icon>
+        <span>{{ store.snackbar.message }}</span>
+      </div>
       <template v-if="store.snackbar.action" #actions>
         <button class="undo-btn" @click="handleUndo">Undo</button>
       </template>
@@ -173,35 +176,47 @@ html, body, #app {
 /* Snackbar override */
 .custom-snackbar .v-snackbar__wrapper {
   min-width: auto !important;
-  margin-top: 8px !important;
+  margin-bottom: 68px !important;
 }
 .custom-snackbar .v-snackbar__content {
   font-size: 12px !important;
   padding: 8px 16px !important;
 }
 .custom-snackbar.has-action .v-snackbar__wrapper {
-  min-width: 200px !important;
+  min-width: 260px !important;
+  background: #1a1a2e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
 .custom-snackbar.has-action .v-snackbar__content {
-  padding: 10px 12px !important;
+  padding: 12px 16px !important;
+}
+.snackbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.snackbar-icon {
+  color: rgba(255, 255, 255, 0.5);
 }
 .custom-snackbar .v-snackbar__actions {
   margin-inline-end: 0 !important;
 }
 .undo-btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 8px 16px;
   cursor: pointer;
   transition: all 0.15s;
   margin-left: 8px;
 }
 .undo-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* Page Transitions */
