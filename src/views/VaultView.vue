@@ -585,6 +585,41 @@ defineExpose({ openNewEntry, focusSearch })
 </script>
 
 <style scoped>
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+.entry-list::-webkit-scrollbar,
+.detail-body::-webkit-scrollbar,
+.dialog-body::-webkit-scrollbar {
+  width: 4px;
+}
+.entry-list::-webkit-scrollbar-track,
+.detail-body::-webkit-scrollbar-track,
+.dialog-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.entry-list::-webkit-scrollbar-thumb,
+.detail-body::-webkit-scrollbar-thumb,
+.dialog-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.entry-list::-webkit-scrollbar-thumb:hover,
+.detail-body::-webkit-scrollbar-thumb:hover,
+.dialog-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Page ───────────────────────────────────────────────────── */
 .vault-page {
   height: 100%;
   display: flex;
@@ -593,7 +628,7 @@ defineExpose({ openNewEntry, focusSearch })
   padding-bottom: 60px;
 }
 
-/* Header */
+/* ── Header ─────────────────────────────────────────────────── */
 .vault-header {
   display: flex;
   align-items: center;
@@ -657,7 +692,11 @@ defineExpose({ openNewEntry, focusSearch })
   transform: scale(1.05);
 }
 
-/* Search */
+.add-btn:active {
+  transform: scale(0.95);
+}
+
+/* ── Search ─────────────────────────────────────────────────── */
 .search-wrapper {
   display: flex;
   align-items: center;
@@ -666,13 +705,13 @@ defineExpose({ openNewEntry, focusSearch })
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 10px;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .search-wrapper.focused {
   border-color: rgba(102, 126, 234, 0.4);
   background: rgba(102, 126, 234, 0.05);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08), 0 4px 16px rgba(102, 126, 234, 0.1);
 }
 
 .search-icon {
@@ -714,7 +753,7 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fff;
 }
 
-/* Empty state */
+/* ── Empty state ────────────────────────────────────────────── */
 .empty-state {
   flex: 1;
   display: flex;
@@ -734,6 +773,7 @@ defineExpose({ openNewEntry, focusSearch })
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
+  animation: float 3s ease-in-out infinite;
 }
 
 .empty-title {
@@ -769,28 +809,57 @@ defineExpose({ openNewEntry, focusSearch })
   box-shadow: 0 6px 24px rgba(102, 126, 234, 0.45);
 }
 
-/* Entry list */
+.empty-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Entry list ─────────────────────────────────────────────── */
 .entry-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0 8px 8px;
+  padding: 0 10px 8px;
 }
 
 .entry-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 4px;
-  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.01);
+  position: relative;
+}
+
+.entry-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #667eea, #764ba2);
+  transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .entry-card:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.entry-card:hover::before {
+  height: 60%;
+}
+
+.entry-card:active {
+  transform: translateX(2px) scale(0.99);
 }
 
 .entry-card:hover .entry-actions {
@@ -810,6 +879,11 @@ defineExpose({ openNewEntry, focusSearch })
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.entry-card:hover .entry-avatar {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .avatar-img {
@@ -857,49 +931,56 @@ defineExpose({ openNewEntry, focusSearch })
   display: flex;
   gap: 4px;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s ease;
 }
 
 .action-icon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .action-icon:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+  transform: scale(1.1);
+}
+
+.action-icon:active {
+  transform: scale(0.9);
 }
 
 .action-icon.fav:hover, .action-icon.fav.active {
   color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
 }
 
 .action-icon.copy:hover {
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(102, 126, 234, 0.15);
   color: #667eea;
 }
 
 .action-icon.delete:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
 
-/* Detail floating card */
+/* ── Detail floating card ───────────────────────────────────── */
 .detail-overlay {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -909,13 +990,14 @@ defineExpose({ openNewEntry, focusSearch })
 .detail-card {
   width: 100%;
   max-height: calc(100vh - 40px);
-  background: linear-gradient(180deg, #16162a 0%, #0e0e1a 100%);
+  background: linear-gradient(180deg, #171730 0%, #0f0f1c 100%);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 24px 64px rgba(0, 0, 0, 0.55),
     0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 80px rgba(102, 126, 234, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -927,6 +1009,7 @@ defineExpose({ openNewEntry, focusSearch })
   justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .detail-title {
@@ -953,6 +1036,10 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fbbf24;
 }
 
+.fav-header-btn:active {
+  transform: scale(0.9);
+}
+
 .header-actions {
   display: flex;
   gap: 4px;
@@ -977,6 +1064,10 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fff;
 }
 
+.close-header-btn:active {
+  transform: scale(0.9);
+}
+
 .detail-content {
   flex: 1;
   display: flex;
@@ -989,15 +1080,16 @@ defineExpose({ openNewEntry, focusSearch })
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px 16px;
+  padding: 24px 16px;
 }
 
 .detail-footer {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
   flex-shrink: 0;
 }
 
@@ -1008,10 +1100,25 @@ defineExpose({ openNewEntry, focusSearch })
 
 .detail-avatar-wrap {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 12px;
   cursor: pointer;
+}
+
+.detail-avatar-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 17px;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  transition: all 0.25s ease;
+  pointer-events: none;
+}
+
+.detail-avatar-wrap:hover::after {
+  border-color: rgba(102, 126, 234, 0.5);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15);
 }
 
 .detail-avatar-wrap:hover .avatar-edit-overlay {
@@ -1021,34 +1128,35 @@ defineExpose({ openNewEntry, focusSearch })
 .avatar-edit-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 14px;
+  border-radius: 16px;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 0.15s;
+  z-index: 1;
 }
 
 .detail-icon-actions {
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .detail-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 22px;
+  font-size: 24px;
   color: #fff;
   margin: 0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -1063,15 +1171,21 @@ defineExpose({ openNewEntry, focusSearch })
 .fields-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 16px;
 }
 
 .field-card {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.field-card:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.07);
 }
 
 .field-row {
@@ -1091,6 +1205,12 @@ defineExpose({ openNewEntry, focusSearch })
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.field-card:hover .field-icon {
+  background: rgba(102, 126, 234, 0.15);
+  box-shadow: 0 0 12px rgba(102, 126, 234, 0.1);
 }
 
 .field-content {
@@ -1121,7 +1241,7 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .field-value.url {
-  color: #667eea;
+  color: #8b9cf7;
 }
 
 .field-value.notes-text {
@@ -1151,12 +1271,16 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fff;
 }
 
+.field-btn:active {
+  transform: scale(0.85);
+}
+
 .field-btn.sm {
   width: 24px;
   height: 24px;
 }
 
-/* History */
+/* ── History ────────────────────────────────────────────────── */
 .history-section {
   margin-bottom: 16px;
 }
@@ -1183,7 +1307,7 @@ defineExpose({ openNewEntry, focusSearch })
 
 .history-toggle .chevron {
   margin-left: auto;
-  transition: transform 0.2s;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .history-toggle .chevron.open {
@@ -1231,7 +1355,7 @@ defineExpose({ openNewEntry, focusSearch })
   margin-bottom: 20px;
 }
 
-/* Buttons */
+/* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   padding: 12px 20px;
   border: none;
@@ -1243,7 +1367,9 @@ defineExpose({ openNewEntry, focusSearch })
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:disabled {
@@ -1259,31 +1385,49 @@ defineExpose({ openNewEntry, focusSearch })
 
 .btn.primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4), 0 0 0 1px rgba(102, 126, 234, 0.2);
+}
+
+.btn.primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .btn.secondary {
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .btn.secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn.secondary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn.danger {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   padding: 12px 14px;
+  border: 1px solid rgba(239, 68, 68, 0.1);
 }
 
 .btn.danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.1);
+}
+
+.btn.danger:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .flex-1 { flex: 1; }
 
-/* Edit form */
+/* ── Edit form ──────────────────────────────────────────────── */
 .edit-form {
   display: flex;
   flex-direction: column;
@@ -1317,7 +1461,7 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fff;
   font-size: 14px;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   font-family: inherit;
 }
 
@@ -1325,6 +1469,7 @@ defineExpose({ openNewEntry, focusSearch })
 .form-field textarea:focus {
   border-color: rgba(102, 126, 234, 0.5);
   background: rgba(102, 126, 234, 0.05);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
 }
 
 .form-field input::placeholder,
@@ -1342,12 +1487,13 @@ defineExpose({ openNewEntry, focusSearch })
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
 }
 
 .input-group:focus-within {
   border-color: rgba(102, 126, 234, 0.5);
   background: rgba(102, 126, 234, 0.05);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
 }
 
 .input-group input {
@@ -1361,6 +1507,7 @@ defineExpose({ openNewEntry, focusSearch })
 .input-group input:focus {
   background: transparent;
   border-color: transparent;
+  box-shadow: none;
 }
 
 .input-btn {
@@ -1373,18 +1520,25 @@ defineExpose({ openNewEntry, focusSearch })
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s;
+  transition: all 0.15s;
+  border-radius: 8px;
 }
 
 .input-btn:hover {
   color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.input-btn:active {
+  transform: scale(0.85);
 }
 
 .input-btn.accent:hover {
   color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
 }
 
-/* Icon picker */
+/* ── Icon picker ────────────────────────────────────────────── */
 .icon-picker {
   display: flex;
   align-items: center;
@@ -1432,6 +1586,10 @@ defineExpose({ openNewEntry, focusSearch })
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
 .icon-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -1447,16 +1605,32 @@ defineExpose({ openNewEntry, focusSearch })
   color: #ef4444;
 }
 
-/* Add dialog */
+/* ── Add dialog ─────────────────────────────────────────────── */
 .add-dialog {
-  background: linear-gradient(180deg, #13131c 0%, #0d0d14 100%);
+  background: linear-gradient(180deg, #14142a 0%, #0d0d18 100%);
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 60px rgba(102, 126, 234, 0.04);
   display: flex;
   flex-direction: column;
   max-height: 85vh;
+  position: relative;
+}
+
+.add-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
 }
 
 .dialog-header {
@@ -1475,6 +1649,7 @@ defineExpose({ openNewEntry, focusSearch })
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .dialog-title {
@@ -1503,6 +1678,10 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fff;
 }
 
+.dialog-close:active {
+  transform: scale(0.85);
+}
+
 .dialog-body {
   padding: 16px;
   display: flex;
@@ -1518,17 +1697,18 @@ defineExpose({ openNewEntry, focusSearch })
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
   flex-shrink: 0;
 }
 
-/* Transitions */
+/* ── Transitions ────────────────────────────────────────────── */
 .detail-enter-active {
   transition: opacity 0.25s ease;
 }
 .detail-enter-active .detail-card {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
 }
 .detail-leave-active {
   transition: opacity 0.2s ease;
@@ -1541,7 +1721,7 @@ defineExpose({ openNewEntry, focusSearch })
 }
 .detail-enter-from .detail-card {
   opacity: 0;
-  transform: scale(0.92) translateY(16px);
+  transform: scale(0.9) translateY(20px);
 }
 .detail-leave-to {
   opacity: 0;
@@ -1574,18 +1754,23 @@ defineExpose({ openNewEntry, focusSearch })
 
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-16px);
+}
+
+.list-leave-active {
+  position: absolute;
+  width: calc(100% - 20px);
 }
 
 .expand-enter-active,
 .expand-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
