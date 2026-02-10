@@ -87,7 +87,7 @@ export const useVaultStore = defineStore('vault', () => {
 
   // ── Entry CRUD ─────────────────────────────────────────────
   async function addEntry(data: {
-    service: string; username: string; password: string; url?: string; notes?: string; favorite?: boolean
+    service: string; username: string; password: string; url?: string; notes?: string; icon?: string; favorite?: boolean
   }) {
     if (!data.service || !data.username || !data.password) {
       notify('Service, username, and password are required', 'error')
@@ -102,7 +102,7 @@ export const useVaultStore = defineStore('vault', () => {
   }
 
   async function updateEntry(data: {
-    id: string; service: string; username: string; password: string; url?: string; notes?: string; favorite?: boolean
+    id: string; service: string; username: string; password: string; url?: string; notes?: string; icon?: string; favorite?: boolean
   }) {
     if (!data.service || !data.username || !data.password) {
       notify('Service, username, and password are required', 'error')
@@ -141,6 +141,7 @@ export const useVaultStore = defineStore('vault', () => {
       password: entry.password,
       url: entry.url,
       notes: entry.notes,
+      icon: entry.icon,
       favorite: entry.favorite,
     })
     if (!res.success) { notify(res.error || 'Failed to restore', 'error'); return false }
@@ -167,6 +168,21 @@ export const useVaultStore = defineStore('vault', () => {
     if (res.settings) settings.value = res.settings
     notify('Settings saved')
     return true
+  }
+
+  // ── Icons ────────────────────────────────────────────────────
+  async function fetchFavicon(url: string) {
+    trackActivity()
+    const res = await window.electronAPI.fetchFavicon(url)
+    if (!res.success) return null
+    return res.icon || null
+  }
+
+  async function pickImage() {
+    trackActivity()
+    const res = await window.electronAPI.pickImage()
+    if (!res.success) return null
+    return res.icon || null
   }
 
   // ── Password generator ─────────────────────────────────────
@@ -201,6 +217,8 @@ export const useVaultStore = defineStore('vault', () => {
     restoreEntry,
     toggleFavorite,
     updateSettings,
+    fetchFavicon,
+    pickImage,
     generatePassword,
   }
 })

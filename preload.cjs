@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('vault:getSettings'),
   updateSettings: (settings) => ipcRenderer.invoke('vault:updateSettings', settings),
 
+  // Icons
+  fetchFavicon: (url) => ipcRenderer.invoke('vault:fetchFavicon', { url }),
+  pickImage: () => ipcRenderer.invoke('vault:pickImage'),
+
   // Utility
   generatePassword: (length) => ipcRenderer.invoke('vault:generatePassword', { length }),
   activity: () => ipcRenderer.invoke('vault:activity'),

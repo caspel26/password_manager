@@ -1,8 +1,10 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, net } = require('electron')
 const { screen } = require('electron')
 const path = require('path')
 const crypto = require('crypto')
 const fs = require('fs')
+let sharp
+try { sharp = require('sharp') } catch { sharp = null }
 
 let win
 let autoLockTimer = null
@@ -211,7 +213,7 @@ ipcMain.handle('vault:getEntries', async () => {
   return { success: true, entries: state.entries }
 })
 
-ipcMain.handle('vault:addEntry', async (_event, { service, username, password, url, notes, favorite }) => {
+ipcMain.handle('vault:addEntry', async (_event, { service, username, password, url, notes, icon, favorite }) => {
   try {
     if (!state.unlocked) return { success: false, error: 'Vault is locked' }
     resetAutoLockTimer()
@@ -222,6 +224,7 @@ ipcMain.handle('vault:addEntry', async (_event, { service, username, password, u
       password,
       url: url || '',
       notes: notes || '',
+      icon: icon || '',
       favorite: favorite || false,
       passwordHistory: [], // Store previous passwords
       createdAt: new Date().toISOString(),
@@ -235,7 +238,7 @@ ipcMain.handle('vault:addEntry', async (_event, { service, username, password, u
   }
 })
 
-ipcMain.handle('vault:updateEntry', async (_event, { id, service, username, password, url, notes, favorite }) => {
+ipcMain.handle('vault:updateEntry', async (_event, { id, service, username, password, url, notes, icon, favorite }) => {
   try {
     if (!state.unlocked) return { success: false, error: 'Vault is locked' }
     resetAutoLockTimer()
@@ -261,6 +264,7 @@ ipcMain.handle('vault:updateEntry', async (_event, { id, service, username, pass
       password,
       url: url || '',
       notes: notes || '',
+      icon: icon !== undefined ? icon : (oldEntry.icon || ''),
       favorite: favorite !== undefined ? favorite : oldEntry.favorite,
       passwordHistory,
       updatedAt: new Date().toISOString(),
@@ -296,6 +300,47 @@ ipcMain.handle('vault:deleteEntry', async (_event, { id }) => {
     if (state.entries.length === len) return { success: false, error: 'Entry not found' }
     saveVault()
     return { success: true }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vault:fetchFavicon', async (_event, { url }) => {
+  try {
+    resetAutoLockTimer()
+    if (!sharp) return { success: false, error: 'Image processing unavailable' }
+    let domain
+    try {
+      domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname
+    } catch {
+      return { success: false, error: 'Invalid URL' }
+    }
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+    const response = await net.fetch(faviconUrl)
+    if (!response.ok) return { success: false, error: 'Could not fetch favicon' }
+    const buffer = Buffer.from(await response.arrayBuffer())
+    const resized = await sharp(buffer).resize(64, 64, { fit: 'cover' }).png().toBuffer()
+    const icon = `data:image/png;base64,${resized.toString('base64')}`
+    return { success: true, icon }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vault:pickImage', async () => {
+  try {
+    resetAutoLockTimer()
+    if (!sharp) return { success: false, error: 'Image processing unavailable' }
+    const { filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Choose an icon',
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'] }],
+      properties: ['openFile'],
+    })
+    if (!filePaths || filePaths.length === 0) return { success: false, error: 'Cancelled' }
+    const raw = fs.readFileSync(filePaths[0])
+    const resized = await sharp(raw).resize(64, 64, { fit: 'cover' }).png().toBuffer()
+    const icon = `data:image/png;base64,${resized.toString('base64')}`
+    return { success: true, icon }
   } catch (e) {
     return { success: false, error: e.message }
   }
@@ -351,7 +396,7 @@ app.whenReady().then(() => {
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
   const winWidth = 380
-  const winHeight = 580
+  const winHeight = 640
   const margin = 24
 
   // Set app icon for dev mode (dock icon on macOS)

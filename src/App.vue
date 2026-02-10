@@ -293,6 +293,7 @@ html, body, #app {
 <style scoped>
 .app-main {
   height: 100vh;
+  padding-top: 28px;
   background: #0a0a0f;
 }
 

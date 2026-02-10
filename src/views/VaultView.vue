@@ -63,8 +63,9 @@
             class="entry-card"
             @click="selectEntry(entry)"
           >
-            <div class="entry-avatar" :style="{ background: getAvatarColor(entry.service) }">
-              {{ entry.service.charAt(0).toUpperCase() }}
+            <div class="entry-avatar" :style="{ background: entry.icon ? 'transparent' : getAvatarColor(entry.service) }">
+              <img v-if="entry.icon" :src="entry.icon" class="avatar-img" />
+              <span v-else>{{ entry.service.charAt(0).toUpperCase() }}</span>
             </div>
             <div class="entry-info">
               <div class="entry-service">
@@ -82,45 +83,56 @@
               <button class="action-icon copy" @click.stop="copyPassword(entry.password)">
                 <v-icon size="14">mdi-content-copy</v-icon>
               </button>
+              <button class="action-icon delete" @click.stop="deleteFromList(entry.id)">
+                <v-icon size="14">mdi-delete-outline</v-icon>
+              </button>
             </div>
           </div>
         </TransitionGroup>
       </div>
     </transition>
 
-    <!-- Detail drawer -->
-    <v-navigation-drawer
-      v-model="showDetail"
-      location="right"
-      temporary
-      width="100%"
-      class="detail-drawer"
-    >
-      <div v-if="selectedEntry" class="detail-page">
-        <div class="detail-header">
-          <button class="back-btn" @click="showDetail = false">
-            <v-icon size="18">mdi-chevron-left</v-icon>
-          </button>
-          <span class="detail-title">{{ editing ? 'Edit Credential' : 'Credential Details' }}</span>
-          <div class="header-actions">
-            <button class="fav-header-btn" :class="{ active: selectedEntry.favorite }" @click="toggleFav(selectedEntry.id)">
-              <v-icon size="16">{{ selectedEntry.favorite ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
-            </button>
-            <button v-if="!editing" class="delete-header-btn" @click="handleDelete">
-              <v-icon size="16">mdi-delete-outline</v-icon>
-            </button>
+    <!-- Detail overlay -->
+    <transition name="detail">
+      <div v-if="showDetail && selectedEntry" class="detail-overlay" @click.self="showDetail = false">
+        <div class="detail-card">
+          <div class="detail-header">
+            <span class="detail-title">{{ editing ? 'Edit Credential' : 'Details' }}</span>
+            <div class="header-actions">
+              <button class="fav-header-btn" :class="{ active: selectedEntry.favorite }" @click="toggleFav(selectedEntry.id)">
+                <v-icon size="16">{{ selectedEntry.favorite ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+              </button>
+              <button class="close-header-btn" @click="showDetail = false">
+                <v-icon size="16">mdi-close</v-icon>
+              </button>
+            </div>
           </div>
-        </div>
 
         <!-- View mode -->
         <transition name="fade" mode="out-in">
           <div v-if="!editing" key="view" class="detail-content">
             <div class="detail-body">
               <div class="detail-hero">
-                <div class="detail-avatar" :style="{ background: getAvatarColor(selectedEntry.service) }">
-                  {{ selectedEntry.service.charAt(0).toUpperCase() }}
+                <div class="detail-avatar-wrap" @click="handlePickImageForEntry">
+                  <div class="detail-avatar" :style="{ background: selectedEntry.icon ? 'transparent' : getAvatarColor(selectedEntry.service) }">
+                    <img v-if="selectedEntry.icon" :src="selectedEntry.icon" class="avatar-img" />
+                    <span v-else>{{ selectedEntry.service.charAt(0).toUpperCase() }}</span>
+                  </div>
+                  <div class="avatar-edit-overlay">
+                    <v-icon size="16" color="white">mdi-camera</v-icon>
+                  </div>
                 </div>
                 <h2 class="detail-service">{{ selectedEntry.service }}</h2>
+                <div class="detail-icon-actions">
+                  <button v-if="selectedEntry.url" class="icon-btn" :disabled="fetchingIcon" @click="handleFetchFaviconForEntry">
+                    <v-icon size="12">mdi-web</v-icon>
+                    {{ fetchingIcon ? 'Fetching...' : 'Fetch icon' }}
+                  </button>
+                  <button v-if="selectedEntry.icon" class="icon-btn remove" @click="handleRemoveIconForEntry">
+                    <v-icon size="12">mdi-close</v-icon>
+                    Remove
+                  </button>
+                </div>
               </div>
 
               <div class="fields-section">
@@ -255,6 +267,28 @@
                   <input v-model="editForm.url" type="text" placeholder="https://..." />
                 </div>
                 <div class="form-field">
+                  <label>Icon <span class="optional">(optional)</span></label>
+                  <div class="icon-picker">
+                    <div class="icon-preview" :style="{ background: editForm.icon ? 'transparent' : getAvatarColor(editForm.service || 'A') }">
+                      <img v-if="editForm.icon" :src="editForm.icon" class="avatar-img" />
+                      <span v-else>{{ (editForm.service || 'A').charAt(0).toUpperCase() }}</span>
+                    </div>
+                    <div class="icon-actions">
+                      <button type="button" class="icon-btn" :disabled="!editForm.url || fetchingIcon" @click.stop="handleFetchFavicon(editForm)">
+                        <v-icon size="12">mdi-web</v-icon>
+                        {{ fetchingIcon ? 'Fetching...' : 'From URL' }}
+                      </button>
+                      <button type="button" class="icon-btn" @click.stop="handlePickImage(editForm)">
+                        <v-icon size="12">mdi-image</v-icon>
+                        Upload
+                      </button>
+                      <button v-if="editForm.icon" type="button" class="icon-btn remove" @click.stop="editForm.icon = ''">
+                        <v-icon size="12">mdi-close</v-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-field">
                   <label>Notes <span class="optional">(optional)</span></label>
                   <textarea v-model="editForm.notes" rows="3" placeholder="Additional information..."></textarea>
                 </div>
@@ -268,8 +302,9 @@
             </div>
           </div>
         </transition>
+        </div>
       </div>
-    </v-navigation-drawer>
+    </transition>
 
     <!-- Add dialog -->
     <v-dialog v-model="showAdd" max-width="360" persistent :scrim="true">
@@ -309,6 +344,28 @@
             <input v-model="addForm.url" type="text" placeholder="https://..." />
           </div>
           <div class="form-field">
+            <label>Icon <span class="optional">(optional)</span></label>
+            <div class="icon-picker">
+              <div class="icon-preview" :style="{ background: addForm.icon ? 'transparent' : getAvatarColor(addForm.service || 'A') }">
+                <img v-if="addForm.icon" :src="addForm.icon" class="avatar-img" />
+                <span v-else>{{ (addForm.service || 'A').charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="icon-actions">
+                <button type="button" class="icon-btn" :disabled="!addForm.url || fetchingIcon" @click.stop="handleFetchFavicon(addForm)">
+                  <v-icon size="12">mdi-web</v-icon>
+                  {{ fetchingIcon ? 'Fetching...' : 'From URL' }}
+                </button>
+                <button type="button" class="icon-btn" @click.stop="handlePickImage(addForm)">
+                  <v-icon size="12">mdi-image</v-icon>
+                  Upload
+                </button>
+                <button v-if="addForm.icon" type="button" class="icon-btn remove" @click.stop="addForm.icon = ''">
+                  <v-icon size="12">mdi-close</v-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="form-field">
             <label>Notes <span class="optional">(optional)</span></label>
             <textarea v-model="addForm.notes" rows="2" placeholder="Additional information..."></textarea>
           </div>
@@ -344,8 +401,9 @@ const showEditPwd = ref(false)
 const showAddPwd = ref(false)
 const showHistory = ref(false)
 const showHistoryPwd = ref<boolean[]>([])
+const fetchingIcon = ref(false)
 
-const emptyForm = () => ({ service: '', username: '', password: '', url: '', notes: '' })
+const emptyForm = () => ({ service: '', username: '', password: '', url: '', notes: '', icon: '', favorite: false })
 const addForm = ref(emptyForm())
 const editForm = ref({ id: '', ...emptyForm() })
 
@@ -376,7 +434,7 @@ function selectEntry(entry: VaultEntry) {
 
 function startEdit() {
   if (!selectedEntry.value) return
-  editForm.value = { ...selectedEntry.value }
+  editForm.value = { ...selectedEntry.value, icon: selectedEntry.value.icon || '' }
   showEditPwd.value = false
   editing.value = true
 }
@@ -384,14 +442,21 @@ function startEdit() {
 async function handleUpdate() {
   saving.value = true
   try {
-    const ok = await store.updateEntry(editForm.value)
+    const { id, service, username, password, url, notes, icon, favorite } = editForm.value
+    const ok = await store.updateEntry({ id, service, username, password, url, notes, icon, favorite })
     if (ok) {
-      selectedEntry.value = store.entries.find((e) => e.id === editForm.value.id) || null
+      selectedEntry.value = store.entries.find((e) => e.id === id) || null
       editing.value = false
     }
+  } catch (e: unknown) {
+    store.notify(e instanceof Error ? e.message : 'Failed to save', 'error')
   } finally {
     saving.value = false
   }
+}
+
+async function deleteFromList(id: string) {
+  await store.deleteEntry(id)
 }
 
 async function handleDelete() {
@@ -411,8 +476,11 @@ async function handleDelete() {
 async function handleAdd() {
   saving.value = true
   try {
-    const ok = await store.addEntry(addForm.value)
+    const { service, username, password, url, notes, icon } = addForm.value
+    const ok = await store.addEntry({ service, username, password, url, notes, icon })
     if (ok) closeAdd()
+  } catch (e: unknown) {
+    store.notify(e instanceof Error ? e.message : 'Failed to save', 'error')
   } finally {
     saving.value = false
   }
@@ -422,6 +490,51 @@ function closeAdd() {
   showAdd.value = false
   addForm.value = emptyForm()
   showAddPwd.value = false
+}
+
+async function handleFetchFavicon(form: { url: string; icon: string }) {
+  if (!form.url) return
+  fetchingIcon.value = true
+  try {
+    const icon = await store.fetchFavicon(form.url)
+    if (icon) form.icon = icon
+    else store.notify('Could not fetch icon', 'warning')
+  } finally {
+    fetchingIcon.value = false
+  }
+}
+
+async function handlePickImage(form: { icon: string }) {
+  const icon = await store.pickImage()
+  if (icon) form.icon = icon
+}
+
+async function updateEntryIcon(icon: string) {
+  if (!selectedEntry.value) return
+  const entry = selectedEntry.value
+  await store.updateEntry({ id: entry.id, service: entry.service, username: entry.username, password: entry.password, url: entry.url, notes: entry.notes, icon, favorite: entry.favorite })
+  selectedEntry.value = store.entries.find((e) => e.id === entry.id) || null
+}
+
+async function handlePickImageForEntry() {
+  const icon = await store.pickImage()
+  if (icon) await updateEntryIcon(icon)
+}
+
+async function handleFetchFaviconForEntry() {
+  if (!selectedEntry.value?.url) return
+  fetchingIcon.value = true
+  try {
+    const icon = await store.fetchFavicon(selectedEntry.value.url)
+    if (icon) await updateEntryIcon(icon)
+    else store.notify('Could not fetch icon', 'warning')
+  } finally {
+    fetchingIcon.value = false
+  }
+}
+
+async function handleRemoveIconForEntry() {
+  await updateEntryIcon('')
 }
 
 async function fillGenerated(form: { password: string }) {
@@ -696,6 +809,14 @@ defineExpose({ openNewEntry, focusSearch })
   color: #fff;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
 }
 
 .entry-info {
@@ -767,42 +888,45 @@ defineExpose({ openNewEntry, focusSearch })
   color: #667eea;
 }
 
-/* Detail drawer */
-.detail-drawer {
-  background: linear-gradient(180deg, #0d0d14 0%, #0a0a0f 100%) !important;
+.action-icon.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
-.detail-page {
-  height: 100%;
+/* Detail floating card */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 14px;
+}
+
+.detail-card {
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  background: linear-gradient(180deg, #16162a 0%, #0e0e1a 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .detail-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.back-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
 }
 
 .detail-title {
@@ -834,13 +958,13 @@ defineExpose({ openNewEntry, focusSearch })
   gap: 4px;
 }
 
-.delete-header-btn {
+.close-header-btn {
   width: 36px;
   height: 36px;
   border: none;
   border-radius: 10px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -848,20 +972,69 @@ defineExpose({ openNewEntry, focusSearch })
   transition: all 0.15s;
 }
 
-.delete-header-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+.close-header-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .detail-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px 16px;
+}
+
+.detail-footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .detail-hero {
   text-align: center;
   margin-bottom: 24px;
+}
+
+.detail-avatar-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  cursor: pointer;
+}
+
+.detail-avatar-wrap:hover .avatar-edit-overlay {
+  opacity: 1;
+}
+
+.avatar-edit-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.detail-icon-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .detail-avatar {
@@ -874,8 +1047,9 @@ defineExpose({ openNewEntry, focusSearch })
   font-weight: 700;
   font-size: 22px;
   color: #fff;
-  margin: 0 auto 12px;
+  margin: 0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
 
 .detail-service {
@@ -1057,11 +1231,6 @@ defineExpose({ openNewEntry, focusSearch })
   margin-bottom: 20px;
 }
 
-.detail-actions {
-  display: flex;
-  gap: 8px;
-}
-
 /* Buttons */
 .btn {
   padding: 12px 20px;
@@ -1215,6 +1384,69 @@ defineExpose({ openNewEntry, focusSearch })
   color: #667eea;
 }
 
+/* Icon picker */
+.icon-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.icon-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn.remove {
+  border-color: rgba(239, 68, 68, 0.2);
+  color: rgba(239, 68, 68, 0.6);
+}
+
+.icon-btn.remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
 /* Add dialog */
 .add-dialog {
   background: linear-gradient(180deg, #13131c 0%, #0d0d14 100%);
@@ -1278,6 +1510,7 @@ defineExpose({ openNewEntry, focusSearch })
   gap: 14px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .dialog-footer {
@@ -1291,6 +1524,33 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 /* Transitions */
+.detail-enter-active {
+  transition: opacity 0.25s ease;
+}
+.detail-enter-active .detail-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+.detail-leave-active {
+  transition: opacity 0.2s ease;
+}
+.detail-leave-active .detail-card {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.detail-enter-from {
+  opacity: 0;
+}
+.detail-enter-from .detail-card {
+  opacity: 0;
+  transform: scale(0.92) translateY(16px);
+}
+.detail-leave-to {
+  opacity: 0;
+}
+.detail-leave-to .detail-card {
+  opacity: 0;
+  transform: scale(0.95) translateY(8px);
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;

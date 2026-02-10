@@ -25,6 +25,7 @@ export interface VaultEntry {
   password: string
   url: string
   notes: string
+  icon?: string
   favorite: boolean
   passwordHistory: PasswordHistoryItem[]
   createdAt: string
@@ -49,6 +50,7 @@ export interface ElectronAPI {
     password: string
     url?: string
     notes?: string
+    icon?: string
     favorite?: boolean
   }) => Promise<IpcResult>
   updateEntry: (entry: {
@@ -58,12 +60,15 @@ export interface ElectronAPI {
     password: string
     url?: string
     notes?: string
+    icon?: string
     favorite?: boolean
   }) => Promise<IpcResult>
   deleteEntry: (id: string) => Promise<IpcResult>
   toggleFavorite: (id: string) => Promise<IpcResult>
   getSettings: () => Promise<IpcResult>
   updateSettings: (settings: Partial<VaultSettings>) => Promise<IpcResult>
+  fetchFavicon: (url: string) => Promise<IpcResult & { icon?: string }>
+  pickImage: () => Promise<IpcResult & { icon?: string }>
   generatePassword: (length?: number) => Promise<IpcResult>
   activity: () => Promise<{ success: boolean }>
   onShortcutNewEntry: (callback: () => void) => void

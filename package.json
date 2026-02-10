@@ -23,6 +23,7 @@
   "main": "main.cjs",
   "dependencies": {
     "pinia": "^3.0.1",
+    "sharp": "^0.34.5",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vuetify": "^3.7.13"
@@ -101,7 +102,6 @@
     "happy-dom": "^17.6.3",
     "jiti": "^2.4.2",
     "npm-run-all2": "^7.0.2",
-    "sharp": "^0.34.5",
     "typescript": "~5.7.3",
     "vite": "^6.1.0",
     "vite-plugin-vue-devtools": "^7.7.2",
