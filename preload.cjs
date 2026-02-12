@@ -1,9 +1,15 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // User management
+  listUsers: () => ipcRenderer.invoke('user:list'),
+  register: (data) => ipcRenderer.invoke('user:register', data),
+  login: (data) => ipcRenderer.invoke('user:login', data),
+  getProfile: () => ipcRenderer.invoke('user:getProfile'),
+  updateProfile: (data) => ipcRenderer.invoke('user:updateProfile', data),
+  deleteAccount: (password) => ipcRenderer.invoke('user:deleteAccount', { password }),
+
   // Vault lifecycle
-  createVault: (password) => ipcRenderer.invoke('vault:create', { password }),
-  unlockVault: (password) => ipcRenderer.invoke('vault:unlock', { password }),
   lockVault: () => ipcRenderer.invoke('vault:lock'),
   isUnlocked: () => ipcRenderer.invoke('vault:isUnlocked'),
 

@@ -128,7 +128,7 @@ function copyPassword() {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #0a0a0f;
+  background: var(--bg-primary);
   padding-bottom: 60px;
 }
 
@@ -140,7 +140,7 @@ function copyPassword() {
 .page-title {
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .generator-content {
@@ -156,20 +156,20 @@ function copyPassword() {
   align-items: center;
   gap: 10px;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
 }
 
 .password-card.empty .password-text {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
 }
 
 .password-text {
   flex: 1;
   font-family: 'SF Mono', 'JetBrains Mono', monospace;
   font-size: 13px;
-  color: #fff;
+  color: var(--text-primary);
   word-break: break-all;
   line-height: 1.4;
   background: transparent;
@@ -180,8 +180,8 @@ function copyPassword() {
   height: 32px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -192,7 +192,7 @@ function copyPassword() {
 
 .copy-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .copy-btn:disabled {
@@ -210,7 +210,7 @@ function copyPassword() {
 .strength-bar {
   flex: 1;
   height: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-hover);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -238,7 +238,7 @@ function copyPassword() {
 
 .length-card {
   padding: 14px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-card);
   border-radius: 12px;
 }
 
@@ -252,14 +252,14 @@ function copyPassword() {
 .length-title {
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
 }
 
 .length-value {
   font-size: 13px;
   font-weight: 700;
-  color: #7c6ff7;
-  background: rgba(68, 52, 188, 0.15);
+  color: hsl(var(--accent-h), var(--accent-s), 70%);
+  background: hsla(var(--accent-h), var(--accent-s), 47%, 0.15);
   padding: 3px 10px;
   border-radius: 6px;
 }
@@ -268,7 +268,7 @@ function copyPassword() {
   width: 100%;
   height: 3px;
   appearance: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-hover);
   border-radius: 2px;
   outline: none;
 }
@@ -277,10 +277,10 @@ function copyPassword() {
   appearance: none;
   width: 16px;
   height: 16px;
-  background: linear-gradient(135deg, #4434bc, #6c5ce7);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 47%), hsl(var(--accent-h), var(--accent-s), 58%));
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(68, 52, 188, 0.4);
+  box-shadow: 0 2px 6px hsla(var(--accent-h), var(--accent-s), 47%, 0.4);
 }
 
 .length-range {
@@ -288,12 +288,12 @@ function copyPassword() {
   justify-content: space-between;
   margin-top: 6px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
 }
 
 .types-card {
   padding: 14px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-card);
   border-radius: 12px;
 }
 
@@ -326,7 +326,7 @@ function copyPassword() {
   width: 100%;
   height: 40px;
   margin-top: auto;
-  background: linear-gradient(135deg, #4434bc, #5a4ad1);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 47%), hsl(var(--accent-h), var(--accent-s), 52%));
   border: none;
   border-radius: 10px;
   color: #fff;
@@ -334,12 +334,12 @@ function copyPassword() {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-  box-shadow: 0 4px 16px rgba(68, 52, 188, 0.3);
+  box-shadow: 0 4px 16px hsla(var(--accent-h), var(--accent-s), 47%, 0.3);
 }
 
 .generate-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(68, 52, 188, 0.4);
+  box-shadow: 0 6px 20px hsla(var(--accent-h), var(--accent-s), 47%, 0.4);
 }
 
 .generate-btn:active:not(:disabled) {

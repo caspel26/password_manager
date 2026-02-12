@@ -1,6 +1,6 @@
 import { ref, computed, toRaw } from 'vue'
 import { defineStore } from 'pinia'
-import type { VaultEntry, VaultSettings } from '@/types/electron'
+import type { VaultEntry, VaultSettings, UserProfile } from '@/types/electron'
 
 export const useVaultStore = defineStore('vault', () => {
   // ── State ──────────────────────────────────────────────────
@@ -15,6 +15,10 @@ export const useVaultStore = defineStore('vault', () => {
     autoLockEnabled: true,
   })
   const lastDeletedEntry = ref<VaultEntry | null>(null)
+  const currentUser = ref<UserProfile | null>(null)
+  const registeredUsers = ref<UserProfile[]>([])
+  const accentColor = ref(248)
+  const theme = ref<'light' | 'dark'>('dark')
 
   // ── Computed ───────────────────────────────────────────────
   const filteredEntries = computed(() => {
@@ -48,41 +52,95 @@ export const useVaultStore = defineStore('vault', () => {
     window.electronAPI.activity()
   }
 
-  // ── Vault lifecycle ────────────────────────────────────────
-  async function createVault(password: string, confirm: string) {
-    if (!password) { notify('Master password is required', 'error'); return false }
+  function applyAccentColor(hue: number) {
+    accentColor.value = hue
+    document.documentElement.style.setProperty('--accent-h', String(hue))
+  }
+
+  function applyTheme(t: 'light' | 'dark') {
+    theme.value = t
+    document.documentElement.classList.toggle('theme-light', t === 'light')
+  }
+
+  // ── User management ─────────────────────────────────────────
+  async function loadUsers() {
+    const res = await window.electronAPI.listUsers()
+    if (res.success && res.users) {
+      registeredUsers.value = res.users
+    }
+    return registeredUsers.value
+  }
+
+  async function register(username: string, password: string, confirm: string, displayName?: string) {
+    if (!username) { notify('Username is required', 'error'); return false }
+    if (!password) { notify('Password is required', 'error'); return false }
     if (password !== confirm) { notify('Passwords do not match', 'error'); return false }
     if (password.length < 8) { notify('Password must be at least 8 characters', 'error'); return false }
 
-    const res = await window.electronAPI.createVault(password)
-    if (!res.success) { notify(res.error || 'Failed to create vault', 'error'); return false }
+    const res = await window.electronAPI.register({ username, password, displayName })
+    if (!res.success) { notify(res.error || 'Registration failed', 'error'); return false }
     unlocked.value = true
-    vaultName.value = res.vaultName || null
+    currentUser.value = res.user || null
+    vaultName.value = res.user?.displayName || null
     entries.value = []
-    settings.value = res.settings || { autoLockMinutes: 5, autoLockEnabled: true }
-    notify('Vault created')
+    settings.value = { autoLockMinutes: 5, autoLockEnabled: true }
+    applyAccentColor(res.user?.accentColor ?? 248)
+    applyTheme(res.user?.theme ?? 'dark')
+    notify('Account created')
     return true
   }
 
-  async function unlock(password: string) {
-    if (!password) { notify('Master password is required', 'error'); return false }
+  async function login(username: string, password: string) {
+    if (!username) { notify('Username is required', 'error'); return false }
+    if (!password) { notify('Password is required', 'error'); return false }
 
-    const res = await window.electronAPI.unlockVault(password)
-    if (!res.success) { notify(res.error || 'Failed to unlock vault', 'error'); return false }
+    const res = await window.electronAPI.login({ username, password })
+    if (!res.success) { notify(res.error || 'Login failed', 'error'); return false }
     unlocked.value = true
-    vaultName.value = res.vaultName || null
+    currentUser.value = res.user || null
+    vaultName.value = res.user?.displayName || null
     entries.value = res.entries || []
     settings.value = res.settings || { autoLockMinutes: 5, autoLockEnabled: true }
+    applyAccentColor(res.user?.accentColor ?? 248)
+    applyTheme(res.user?.theme ?? 'dark')
     return true
   }
 
   async function lock() {
     await window.electronAPI.lockVault()
     unlocked.value = false
+    currentUser.value = null
     vaultName.value = null
     entries.value = []
     searchQuery.value = ''
     generatedPassword.value = null
+  }
+
+  async function updateProfile(data: { displayName?: string; avatar?: string; accentColor?: number; theme?: 'light' | 'dark' }) {
+    trackActivity()
+    const res = await window.electronAPI.updateProfile(data)
+    if (!res.success) { notify(res.error || 'Failed to update profile', 'error'); return false }
+    if (res.user) {
+      currentUser.value = res.user
+      vaultName.value = res.user.displayName
+      if (data.accentColor !== undefined) applyAccentColor(data.accentColor)
+      if (data.theme !== undefined) applyTheme(data.theme)
+    }
+    notify('Profile updated')
+    return true
+  }
+
+  async function deleteAccount(password: string) {
+    const res = await window.electronAPI.deleteAccount(password)
+    if (!res.success) { notify(res.error || 'Failed to delete account', 'error'); return false }
+    unlocked.value = false
+    currentUser.value = null
+    vaultName.value = null
+    entries.value = []
+    searchQuery.value = ''
+    generatedPassword.value = null
+    notify('Account deleted')
+    return true
   }
 
   // ── Entry CRUD ─────────────────────────────────────────────
@@ -203,14 +261,23 @@ export const useVaultStore = defineStore('vault', () => {
     snackbar,
     settings,
     lastDeletedEntry,
+    currentUser,
+    registeredUsers,
+    accentColor,
+    theme,
     filteredEntries,
     entryCount,
     favoriteCount,
     notify,
     trackActivity,
-    createVault,
-    unlock,
+    applyAccentColor,
+    applyTheme,
+    loadUsers,
+    register,
+    login,
     lock,
+    updateProfile,
+    deleteAccount,
     addEntry,
     updateEntry,
     deleteEntry,

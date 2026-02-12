@@ -10,13 +10,46 @@ let win
 let autoLockTimer = null
 const AUTO_LOCK_MINUTES = 5 // Lock after 5 minutes of inactivity
 
+// ── User data paths ─────────────────────────────────────────────
+
+function getDataDir() {
+  const dir = path.join(app.getPath('userData'), 'vaults')
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  return dir
+}
+
+function getUsersFile() {
+  return path.join(getDataDir(), 'users.json')
+}
+
+function getUserVaultPath(username) {
+  const dir = path.join(getDataDir(), username)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  return path.join(dir, 'vault.dat')
+}
+
+function loadUsers() {
+  const file = getUsersFile()
+  if (!fs.existsSync(file)) return []
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf-8'))
+  } catch {
+    return []
+  }
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(getUsersFile(), JSON.stringify(users, null, 2), 'utf-8')
+}
+
 // ── State ───────────────────────────────────────────────────────
 
 let state = {
-  derivedKey: null,            // 32-byte AES key derived from master password
-  vaultPath: null,             // path to the .vault file
+  derivedKey: null,            // 32-byte AES key derived from user password
+  vaultPath: null,             // path to the vault file
   entries: [],                 // decrypted entries in memory
   unlocked: false,
+  currentUser: null,           // current logged-in user object
   settings: {
     autoLockMinutes: AUTO_LOCK_MINUTES,
     autoLockEnabled: true,
@@ -35,6 +68,7 @@ function resetAutoLockTimer() {
       state.derivedKey = null
       state.entries = []
       state.unlocked = false
+      state.currentUser = null
       // Notify renderer
       win.webContents.send('vault:auto-locked')
     }
@@ -76,7 +110,7 @@ function decrypt(packed, key) {
 // ── Vault file format ───────────────────────────────────────────
 // JSON: { salt, verify, entries[], settings? }
 
-function createVault(password, vaultPath) {
+function createVaultFile(password, vaultPath) {
   const salt = crypto.randomBytes(SALT_LEN)
   const key = deriveKey(password, salt)
   const verify = encrypt('__vault_ok__', key)
@@ -96,7 +130,7 @@ function loadVault(password, vaultPath) {
   const salt = Buffer.from(vault.salt, 'base64')
   const key = deriveKey(password, salt)
   const check = decrypt(vault.verify, key)
-  if (check !== '__vault_ok__') throw new Error('Invalid master password')
+  if (check !== '__vault_ok__') throw new Error('Invalid password')
   const entries = vault.entries.map((enc) => JSON.parse(decrypt(enc, key)))
   const settings = vault.settings || { autoLockMinutes: AUTO_LOCK_MINUTES, autoLockEnabled: true }
   return { key, salt, entries, settings }
@@ -155,56 +189,175 @@ function generatePassword(length = 24) {
   }
 }
 
-// ── IPC Handlers ────────────────────────────────────────────────
+// ── IPC Handlers — User Management ─────────────────────────────
 
-ipcMain.handle('vault:create', async (_event, { password }) => {
+ipcMain.handle('user:list', async () => {
   try {
-    const { filePath } = await dialog.showSaveDialog(win, {
-      title: 'Create New Vault',
-      defaultPath: 'passwords.vault',
-      filters: [{ name: 'Vault Files', extensions: ['vault'] }, { name: 'All Files', extensions: ['*'] }],
-    })
-    if (!filePath) return { success: false, error: 'Cancelled' }
-    const { key } = createVault(password, filePath)
-    state.derivedKey = key
-    state.vaultPath = filePath
-    state.entries = []
-    state.unlocked = true
-    state.settings = { autoLockMinutes: AUTO_LOCK_MINUTES, autoLockEnabled: true }
-    resetAutoLockTimer()
-    return { success: true, vaultName: path.basename(filePath) }
+    const users = loadUsers()
+    // Return users without sensitive data
+    return {
+      success: true,
+      users: users.map((u) => ({
+        id: u.id,
+        username: u.username,
+        displayName: u.displayName || u.username,
+        avatar: u.avatar || '',
+        accentColor: u.accentColor ?? 248,
+        theme: u.theme ?? 'dark',
+        createdAt: u.createdAt,
+      })),
+    }
   } catch (e) {
     return { success: false, error: e.message }
   }
 })
 
-ipcMain.handle('vault:unlock', async (_event, { password }) => {
+ipcMain.handle('user:register', async (_event, { username, password, displayName }) => {
   try {
-    const { filePaths } = await dialog.showOpenDialog(win, {
-      title: 'Open Vault',
-      filters: [{ name: 'Vault Files', extensions: ['vault'] }, { name: 'All Files', extensions: ['*'] }],
-      properties: ['openFile'],
-    })
-    if (!filePaths || filePaths.length === 0) return { success: false, error: 'Cancelled' }
-    const { key, entries, settings } = loadVault(password, filePaths[0])
+    if (!username || !password) return { success: false, error: 'Username and password are required' }
+    if (username.length < 2) return { success: false, error: 'Username must be at least 2 characters' }
+    if (password.length < 8) return { success: false, error: 'Password must be at least 8 characters' }
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) return { success: false, error: 'Username can only contain letters, numbers, dots, dashes, and underscores' }
+
+    const users = loadUsers()
+    if (users.find((u) => u.username.toLowerCase() === username.toLowerCase())) {
+      return { success: false, error: 'Username already exists' }
+    }
+
+    const vaultPath = getUserVaultPath(username)
+    const { key } = createVaultFile(password, vaultPath)
+
+    const user = {
+      id: crypto.randomUUID(),
+      username,
+      displayName: displayName || username,
+      avatar: '',
+      accentColor: 248,
+      theme: 'dark',
+      createdAt: new Date().toISOString(),
+    }
+    users.push(user)
+    saveUsers(users)
+
+    // Auto-login after registration
     state.derivedKey = key
-    state.vaultPath = filePaths[0]
+    state.vaultPath = vaultPath
+    state.entries = []
+    state.unlocked = true
+    state.currentUser = user
+    state.settings = { autoLockMinutes: AUTO_LOCK_MINUTES, autoLockEnabled: true }
+    resetAutoLockTimer()
+
+    return { success: true, user }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('user:login', async (_event, { username, password }) => {
+  try {
+    if (!username || !password) return { success: false, error: 'Username and password are required' }
+
+    const users = loadUsers()
+    const user = users.find((u) => u.username.toLowerCase() === username.toLowerCase())
+    if (!user) return { success: false, error: 'User not found' }
+
+    const vaultPath = getUserVaultPath(user.username)
+    if (!fs.existsSync(vaultPath)) return { success: false, error: 'Vault file not found' }
+
+    const { key, entries, settings } = loadVault(password, vaultPath)
+
+    state.derivedKey = key
+    state.vaultPath = vaultPath
     state.entries = entries
     state.unlocked = true
+    state.currentUser = user
     state.settings = settings
     resetAutoLockTimer()
-    return { success: true, vaultName: path.basename(filePaths[0]), entries, settings }
+
+    return {
+      success: true,
+      user,
+      entries,
+      settings,
+    }
   } catch (e) {
-    const msg = e.message.includes('Unsupported state') ? 'Invalid master password' : e.message
+    const msg = e.message.includes('Unsupported state') ? 'Invalid password' : e.message
     return { success: false, error: msg }
   }
 })
+
+ipcMain.handle('user:getProfile', async () => {
+  if (!state.currentUser) return { success: false, error: 'Not logged in' }
+  return { success: true, user: state.currentUser }
+})
+
+ipcMain.handle('user:updateProfile', async (_event, { displayName, avatar, accentColor, theme }) => {
+  try {
+    if (!state.currentUser) return { success: false, error: 'Not logged in' }
+
+    const users = loadUsers()
+    const idx = users.findIndex((u) => u.id === state.currentUser.id)
+    if (idx === -1) return { success: false, error: 'User not found' }
+
+    if (displayName !== undefined) users[idx].displayName = displayName
+    if (avatar !== undefined) users[idx].avatar = avatar
+    if (accentColor !== undefined) users[idx].accentColor = accentColor
+    if (theme !== undefined) users[idx].theme = theme
+
+    saveUsers(users)
+    state.currentUser = users[idx]
+
+    return { success: true, user: users[idx] }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('user:deleteAccount', async (_event, { password }) => {
+  try {
+    if (!state.currentUser) return { success: false, error: 'Not logged in' }
+
+    // Verify password before deleting
+    const vaultPath = getUserVaultPath(state.currentUser.username)
+    try {
+      loadVault(password, vaultPath)
+    } catch {
+      return { success: false, error: 'Invalid password' }
+    }
+
+    // Remove vault files
+    const userDir = path.join(getDataDir(), state.currentUser.username)
+    if (fs.existsSync(userDir)) {
+      fs.rmSync(userDir, { recursive: true })
+    }
+
+    // Remove from users list
+    const users = loadUsers()
+    const filtered = users.filter((u) => u.id !== state.currentUser.id)
+    saveUsers(filtered)
+
+    // Lock
+    if (autoLockTimer) clearTimeout(autoLockTimer)
+    state.derivedKey = null
+    state.entries = []
+    state.unlocked = false
+    state.currentUser = null
+
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ── IPC Handlers — Vault Operations ─────────────────────────────
 
 ipcMain.handle('vault:lock', async () => {
   if (autoLockTimer) clearTimeout(autoLockTimer)
   state.derivedKey = null
   state.entries = []
   state.unlocked = false
+  state.currentUser = null
   return { success: true }
 })
 
@@ -358,7 +511,7 @@ ipcMain.handle('vault:generatePassword', async (_event, { length }) => {
 ipcMain.handle('vault:isUnlocked', async () => {
   return {
     unlocked: state.unlocked,
-    vaultName: state.vaultPath ? path.basename(state.vaultPath) : null,
+    vaultName: state.currentUser ? state.currentUser.displayName : null,
     entryCount: state.entries.length,
   }
 })

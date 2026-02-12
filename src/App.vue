@@ -23,7 +23,7 @@ const prevIndex = ref(0)
 const navItems: { icon: string; label: string; path: string }[] = [
   { icon: 'mdi-shield-lock', label: 'Vault', path: '/vault' },
   { icon: 'mdi-key-variant', label: 'Generate', path: '/generator' },
-  { icon: 'mdi-cog', label: 'Settings', path: '/settings' },
+  { icon: 'mdi-account-circle', label: 'Profile', path: '/settings' },
 ]
 
 // Watch route changes to determine animation direction
@@ -150,6 +150,51 @@ onUnmounted(() => {
 </template>
 
 <style>
+:root {
+  --accent-h: 248;
+  --accent-s: 56%;
+  --bg-primary: #0a0a0f;
+  --bg-surface: rgba(255, 255, 255, 0.03);
+  --bg-card: rgba(255, 255, 255, 0.025);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --border-primary: rgba(255, 255, 255, 0.06);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --text-primary: #fff;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-muted: rgba(255, 255, 255, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --nav-bg: rgba(10, 10, 15, 0.92);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.06);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.12);
+  --snackbar-bg: #1a1a2e;
+  --bg-elevated: #171730;
+  --bg-elevated-end: #0f0f1c;
+  --bg-dialog: #14142a;
+  --bg-dialog-end: #0d0d18;
+  --overlay-bg: rgba(0, 0, 0, 0.55);
+}
+:root.theme-light {
+  --bg-primary: #f0f0f5;
+  --bg-surface: rgba(0, 0, 0, 0.03);
+  --bg-card: rgba(0, 0, 0, 0.025);
+  --bg-hover: rgba(0, 0, 0, 0.06);
+  --border-primary: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.05);
+  --text-primary: #1a1a2e;
+  --text-secondary: rgba(0, 0, 0, 0.5);
+  --text-muted: rgba(0, 0, 0, 0.35);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --nav-bg: rgba(240, 240, 245, 0.92);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.15);
+  --snackbar-bg: #e8e8f0;
+  --bg-elevated: #e0e0ea;
+  --bg-elevated-end: #d5d5e0;
+  --bg-dialog: #e5e5f0;
+  --bg-dialog-end: #dddde8;
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+}
+
 html, body, #app {
   height: 100%;
   margin: 0;
@@ -166,11 +211,11 @@ html, body, #app {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Snackbar override */
@@ -184,9 +229,9 @@ html, body, #app {
 }
 .custom-snackbar.has-action .v-snackbar__wrapper {
   min-width: 260px !important;
-  background: #1a1a2e !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  background: var(--snackbar-bg) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: 0 8px 32px var(--shadow-color) !important;
 }
 .custom-snackbar.has-action .v-snackbar__content {
   padding: 12px 16px !important;
@@ -197,13 +242,13 @@ html, body, #app {
   gap: 8px;
 }
 .snackbar-icon {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
 }
 .custom-snackbar .v-snackbar__actions {
   margin-inline-end: 0 !important;
 }
 .undo-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 58%) 0%, hsl(var(--accent-h), var(--accent-s), 47%) 100%);
   border: none;
   border-radius: 8px;
   color: #fff;
@@ -216,7 +261,7 @@ html, body, #app {
 }
 .undo-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px hsla(var(--accent-h), var(--accent-s), 58%, 0.4);
 }
 
 /* Page Transitions */
@@ -294,7 +339,7 @@ html, body, #app {
 .app-main {
   height: 100vh;
   padding-top: 28px;
-  background: #0a0a0f;
+  background: var(--bg-primary);
 }
 
 .bottom-nav {
@@ -306,9 +351,9 @@ html, body, #app {
   justify-content: space-around;
   align-items: center;
   padding: 6px 12px 10px;
-  background: rgba(10, 10, 15, 0.92);
+  background: var(--nav-bg);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--border-light);
   z-index: 100;
 }
 
@@ -320,18 +365,18 @@ html, body, #app {
   padding: 4px 10px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   cursor: pointer;
   border-radius: 10px;
   transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .nav-item.active {
-  color: #7c6ff7;
+  color: hsl(var(--accent-h), var(--accent-s), 70%);
 }
 
 .nav-icon-wrap {
@@ -345,7 +390,7 @@ html, body, #app {
 }
 
 .nav-icon-wrap.active {
-  background: rgba(68, 52, 188, 0.2);
+  background: hsla(var(--accent-h), var(--accent-s), 47%, 0.2);
 }
 
 .nav-label {

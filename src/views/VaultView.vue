@@ -408,7 +408,7 @@ const addForm = ref(emptyForm())
 const editForm = ref({ id: '', ...emptyForm() })
 
 const avatarColors = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 58%) 0%, hsl(var(--accent-h), var(--accent-s), 42%) 100%)',
   'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
   'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
   'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
@@ -610,13 +610,13 @@ defineExpose({ openNewEntry, focusSearch })
 .entry-list::-webkit-scrollbar-thumb,
 .detail-body::-webkit-scrollbar-thumb,
 .dialog-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 .entry-list::-webkit-scrollbar-thumb:hover,
 .detail-body::-webkit-scrollbar-thumb:hover,
 .dialog-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ── Page ───────────────────────────────────────────────────── */
@@ -624,7 +624,7 @@ defineExpose({ openNewEntry, focusSearch })
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0d0d14 0%, #0a0a0f 100%);
+  background: var(--bg-primary);
   padding-bottom: 60px;
 }
 
@@ -647,11 +647,11 @@ defineExpose({ openNewEntry, focusSearch })
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 58%) 0%, hsl(var(--accent-h), var(--accent-s), 42%) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px hsla(var(--accent-h), var(--accent-s), 58%, 0.3);
 }
 
 .header-info {
@@ -662,13 +662,13 @@ defineExpose({ openNewEntry, focusSearch })
 .vault-name {
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: -0.2px;
 }
 
 .entry-count {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-secondary);
   margin-top: 1px;
 }
 
@@ -677,8 +677,8 @@ defineExpose({ openNewEntry, focusSearch })
   height: 32px;
   border: none;
   border-radius: 10px;
-  background: rgba(102, 126, 234, 0.15);
-  color: #667eea;
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.15);
+  color: hsl(var(--accent-h), var(--accent-s), 58%);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -688,7 +688,7 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .add-btn:hover {
-  background: rgba(102, 126, 234, 0.25);
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.25);
   transform: scale(1.05);
 }
 
@@ -702,25 +702,25 @@ defineExpose({ openNewEntry, focusSearch })
   align-items: center;
   margin: 0 12px 12px;
   padding: 0 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
   border-radius: 10px;
   transition: all 0.25s ease;
 }
 
 .search-wrapper.focused {
-  border-color: rgba(102, 126, 234, 0.4);
-  background: rgba(102, 126, 234, 0.05);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08), 0 4px 16px rgba(102, 126, 234, 0.1);
+  border-color: hsla(var(--accent-h), var(--accent-s), 58%, 0.4);
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.05);
+  box-shadow: 0 0 0 3px hsla(var(--accent-h), var(--accent-s), 58%, 0.08), 0 4px 16px hsla(var(--accent-h), var(--accent-s), 58%, 0.1);
 }
 
 .search-icon {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   transition: color 0.2s;
 }
 
 .search-wrapper.focused .search-icon {
-  color: #667eea;
+  color: hsl(var(--accent-h), var(--accent-s), 58%);
 }
 
 .search-input {
@@ -728,20 +728,20 @@ defineExpose({ openNewEntry, focusSearch })
   background: transparent;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 13px;
   padding: 10px 8px;
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
 }
 
 .clear-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover);
   border: none;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -749,8 +749,8 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .clear-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: var(--scrollbar-thumb-hover);
+  color: var(--text-primary);
 }
 
 /* ── Empty state ────────────────────────────────────────────── */
@@ -767,8 +767,8 @@ defineExpose({ openNewEntry, focusSearch })
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-  color: #667eea;
+  background: linear-gradient(135deg, hsla(var(--accent-h), var(--accent-s), 58%, 0.15) 0%, hsla(var(--accent-h), var(--accent-s), 42%, 0.15) 100%);
+  color: hsl(var(--accent-h), var(--accent-s), 58%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -779,13 +779,13 @@ defineExpose({ openNewEntry, focusSearch })
 .empty-title {
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
 .empty-subtitle {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
   margin: 0 0 20px;
 }
 
@@ -793,20 +793,20 @@ defineExpose({ openNewEntry, focusSearch })
   display: flex;
   align-items: center;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 58%) 0%, hsl(var(--accent-h), var(--accent-s), 42%) 100%);
   border: none;
   border-radius: 10px;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 4px 16px hsla(var(--accent-h), var(--accent-s), 58%, 0.35);
   transition: all 0.2s ease;
 }
 
 .empty-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.45);
+  box-shadow: 0 6px 24px hsla(var(--accent-h), var(--accent-s), 58%, 0.45);
 }
 
 .empty-btn:active {
@@ -829,7 +829,7 @@ defineExpose({ openNewEntry, focusSearch })
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
   background: rgba(255, 255, 255, 0.01);
   position: relative;
 }
@@ -843,13 +843,13 @@ defineExpose({ openNewEntry, focusSearch })
   width: 3px;
   height: 0;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, hsl(var(--accent-h), var(--accent-s), 58%), hsl(var(--accent-h), var(--accent-s), 42%));
   transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .entry-card:hover {
-  background: rgba(255, 255, 255, 0.035);
-  border-color: rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface);
+  border-color: var(--border-primary);
   transform: translateX(2px);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
@@ -904,7 +904,7 @@ defineExpose({ openNewEntry, focusSearch })
   gap: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .entry-service span {
@@ -964,8 +964,8 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .action-icon.copy:hover {
-  background: rgba(102, 126, 234, 0.15);
-  color: #667eea;
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.15);
+  color: hsl(var(--accent-h), var(--accent-s), 58%);
 }
 
 .action-icon.delete:hover {
@@ -990,14 +990,14 @@ defineExpose({ openNewEntry, focusSearch })
 .detail-card {
   width: 100%;
   max-height: calc(100vh - 40px);
-  background: linear-gradient(180deg, #171730 0%, #0f0f1c 100%);
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-elevated-end) 100%);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-primary);
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 0 80px rgba(102, 126, 234, 0.04);
+    0 24px 64px var(--shadow-color),
+    0 0 0 1px var(--border-light),
+    inset 0 1px 0 var(--border-light),
+    0 0 80px hsla(var(--accent-h), var(--accent-s), 58%, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1111,14 +1111,14 @@ defineExpose({ openNewEntry, focusSearch })
   position: absolute;
   inset: -3px;
   border-radius: 17px;
-  border: 2px solid rgba(102, 126, 234, 0.2);
+  border: 2px solid hsla(var(--accent-h), var(--accent-s), 58%, 0.2);
   transition: all 0.25s ease;
   pointer-events: none;
 }
 
 .detail-avatar-wrap:hover::after {
-  border-color: rgba(102, 126, 234, 0.5);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15);
+  border-color: hsla(var(--accent-h), var(--accent-s), 58%, 0.5);
+  box-shadow: 0 0 20px hsla(var(--accent-h), var(--accent-s), 58%, 0.15);
 }
 
 .detail-avatar-wrap:hover .avatar-edit-overlay {
@@ -1199,8 +1199,8 @@ defineExpose({ openNewEntry, focusSearch })
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.1);
+  color: hsl(var(--accent-h), var(--accent-s), 58%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1209,8 +1209,8 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .field-card:hover .field-icon {
-  background: rgba(102, 126, 234, 0.15);
-  box-shadow: 0 0 12px rgba(102, 126, 234, 0.1);
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.15);
+  box-shadow: 0 0 12px hsla(var(--accent-h), var(--accent-s), 58%, 0.1);
 }
 
 .field-content {
@@ -1241,7 +1241,7 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .field-value.url {
-  color: #8b9cf7;
+  color: hsl(var(--accent-h), var(--accent-s), 75%);
 }
 
 .field-value.notes-text {
@@ -1378,19 +1378,19 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 58%) 0%, hsl(var(--accent-h), var(--accent-s), 42%) 100%);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px hsla(var(--accent-h), var(--accent-s), 58%, 0.3);
 }
 
 .btn.primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4), 0 0 0 1px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 24px hsla(var(--accent-h), var(--accent-s), 58%, 0.4), 0 0 0 1px hsla(var(--accent-h), var(--accent-s), 58%, 0.2);
 }
 
 .btn.primary:active:not(:disabled) {
   transform: translateY(0) scale(0.97);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px hsla(var(--accent-h), var(--accent-s), 58%, 0.3);
 }
 
 .btn.secondary {
@@ -1467,9 +1467,9 @@ defineExpose({ openNewEntry, focusSearch })
 
 .form-field input:focus,
 .form-field textarea:focus {
-  border-color: rgba(102, 126, 234, 0.5);
-  background: rgba(102, 126, 234, 0.05);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
+  border-color: hsla(var(--accent-h), var(--accent-s), 58%, 0.5);
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.05);
+  box-shadow: 0 0 0 3px hsla(var(--accent-h), var(--accent-s), 58%, 0.08);
 }
 
 .form-field input::placeholder,
@@ -1491,9 +1491,9 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .input-group:focus-within {
-  border-color: rgba(102, 126, 234, 0.5);
-  background: rgba(102, 126, 234, 0.05);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
+  border-color: hsla(var(--accent-h), var(--accent-s), 58%, 0.5);
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.05);
+  box-shadow: 0 0 0 3px hsla(var(--accent-h), var(--accent-s), 58%, 0.08);
 }
 
 .input-group input {
@@ -1534,8 +1534,8 @@ defineExpose({ openNewEntry, focusSearch })
 }
 
 .input-btn.accent:hover {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  color: hsl(var(--accent-h), var(--accent-s), 58%);
+  background: hsla(var(--accent-h), var(--accent-s), 58%, 0.1);
 }
 
 /* ── Icon picker ────────────────────────────────────────────── */
@@ -1607,14 +1607,14 @@ defineExpose({ openNewEntry, focusSearch })
 
 /* ── Add dialog ─────────────────────────────────────────────── */
 .add-dialog {
-  background: linear-gradient(180deg, #14142a 0%, #0d0d18 100%);
+  background: linear-gradient(180deg, var(--bg-dialog) 0%, var(--bg-dialog-end) 100%);
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-primary);
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 0 60px rgba(102, 126, 234, 0.04);
+    0 24px 64px var(--shadow-color),
+    0 0 0 1px var(--border-light),
+    0 0 60px hsla(var(--accent-h), var(--accent-s), 58%, 0.04);
   display: flex;
   flex-direction: column;
   max-height: 85vh;
@@ -1628,7 +1628,7 @@ defineExpose({ openNewEntry, focusSearch })
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+  background: linear-gradient(90deg, hsl(var(--accent-h), var(--accent-s), 58%), hsl(var(--accent-h), var(--accent-s), 42%), hsl(var(--accent-h), var(--accent-s), 58%));
   background-size: 200% 100%;
   animation: shimmer 3s ease-in-out infinite;
 }
@@ -1645,11 +1645,11 @@ defineExpose({ openNewEntry, focusSearch })
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(var(--accent-h), var(--accent-s), 58%) 0%, hsl(var(--accent-h), var(--accent-s), 42%) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px hsla(var(--accent-h), var(--accent-s), 58%, 0.3);
 }
 
 .dialog-title {
